@@ -1,119 +1,137 @@
 package main
 
 import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/api/controller"
+	"github.com/hugohenrick/erp-supermercado/internal/adapter/api/route"
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/repository"
+	"github.com/hugohenrick/erp-supermercado/internal/domain/branch"
+	"github.com/hugohenrick/erp-supermercado/internal/domain/customer"
+	"github.com/hugohenrick/erp-supermercado/internal/domain/tenant"
+	"github.com/hugohenrick/erp-supermercado/internal/domain/user"
 	"github.com/hugohenrick/erp-supermercado/internal/infrastructure/database"
-	"github.com/hugohenrick/erp-supermercado/pkg/tenant"
+	"github.com/hugohenrick/erp-supermercado/pkg/logger"
+	pkgtenant "github.com/hugohenrick/erp-supermercado/pkg/tenant"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// App representa a aplicação e suas dependências
+// App representa a aplicação
 type App struct {
-	router           *gin.Engine
-	db               *database.PostgresDB
-	tenantRepository *repository.PostgresTenantRepository
-	branchRepository *repository.PostgresBranchRepository
-	tenantValidator  *repository.TenantValidator
-	tenantMiddleware gin.HandlerFunc
-	tenantController *controller.TenantController
-	branchController *controller.BranchController
+	Router          *gin.Engine
+	DB              *pgxpool.Pool
+	TenantRepo      tenant.Repository
+	BranchRepo      branch.Repository
+	UserRepo        user.Repository
+	CustomerRepo    customer.Repository
+	TenantValidator pkgtenant.TenantValidator
+	Logger          logger.Logger
+	Server          *http.Server
 }
 
-// NewApp cria uma nova instância do aplicativo
-func NewApp() (*App, error) {
-	// Configurar banco de dados
-	config := database.NewPostgresConfigFromEnv()
-	db, err := database.NewPostgresDB(config)
+// NewApp cria uma nova instância da aplicação
+func NewApp() *App {
+	// Inicializar o banco de dados
+	pool, err := database.NewPostgresDB()
 	if err != nil {
-		return nil, err
+		log.Fatalf("Erro ao conectar ao banco de dados: %v", err)
 	}
 
-	// Criar repositórios
-	tenantRepo := repository.NewPostgresTenantRepository(db)
-	branchRepo := repository.NewPostgresBranchRepository(db)
+	// Inicializar logger
+	logger := logger.NewLogger()
 
-	// Criar validador de tenant
+	// Inicializar repositórios
+	tenantRepo := repository.NewTenantRepository(pool)
+	branchRepo := repository.NewBranchRepository(pool)
+	userRepo := repository.NewUserRepository(pool)
+	customerRepo := repository.NewCustomerRepository(pool)
+
+	// Inicializar validador de tenant
 	tenantValidator := repository.NewTenantValidator(tenantRepo)
 
-	// Criar extrator de tenant
-	tenantExtractor := tenant.NewHeaderTenantExtractor("")
-
-	// Criar middleware de tenant
-	tenantMiddleware := tenant.Middleware(tenantExtractor, tenantValidator)
-
-	// Criar controllers
-	tenantController := controller.NewTenantController(tenantRepo)
-	branchController := controller.NewBranchController(branchRepo)
-
-	// Configurar router com modo correto
+	// Inicializar o router Gin
 	router := gin.Default()
 
-	// Configurar CORS e outros middlewares globais
-	router.Use(gin.Recovery())
+	// Configuração do servidor HTTP
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
+	}
 
 	return &App{
-		router:           router,
-		db:               db,
-		tenantRepository: tenantRepo,
-		branchRepository: branchRepo,
-		tenantValidator:  tenantValidator,
-		tenantMiddleware: tenantMiddleware,
-		tenantController: tenantController,
-		branchController: branchController,
-	}, nil
-}
-
-// SetupRoutes configura as rotas da aplicação
-func (a *App) SetupRoutes(basePath string) {
-	api := a.router.Group(basePath)
-
-	// Health check
-	api.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  "ok",
-			"version": "1.0.0",
-		})
-	})
-
-	// Rotas que não precisam de autenticação de tenant
-	tenantsRoutes := api.Group("/tenants")
-	{
-		tenantsRoutes.POST("", a.tenantController.Create)
-		tenantsRoutes.GET("", a.tenantController.List)
-		tenantsRoutes.GET("/:id", a.tenantController.GetByID)
-		tenantsRoutes.GET("/document/:document", a.tenantController.GetByDocument)
-		tenantsRoutes.PUT("/:id", a.tenantController.Update)
-		tenantsRoutes.DELETE("/:id", a.tenantController.Delete)
-		tenantsRoutes.PATCH("/:id/status/:status", a.tenantController.UpdateStatus)
-	}
-
-	// Rotas que precisam de autenticação de tenant
-	// Usamos o middleware de tenant aqui
-	tenantProtectedRoutes := api.Group("")
-	tenantProtectedRoutes.Use(a.tenantMiddleware)
-
-	// Rotas para filiais
-	branchesRoutes := tenantProtectedRoutes.Group("/branches")
-	{
-		branchesRoutes.POST("", a.branchController.Create)
-		branchesRoutes.GET("", a.branchController.List)
-		branchesRoutes.GET("/:id", a.branchController.GetByID)
-		branchesRoutes.GET("/main", a.branchController.GetMainBranch)
-		branchesRoutes.PUT("/:id", a.branchController.Update)
-		branchesRoutes.DELETE("/:id", a.branchController.Delete)
-		branchesRoutes.PATCH("/:id/status/:status", a.branchController.UpdateStatus)
+		Router:          router,
+		DB:              pool,
+		TenantRepo:      tenantRepo,
+		BranchRepo:      branchRepo,
+		UserRepo:        userRepo,
+		CustomerRepo:    customerRepo,
+		TenantValidator: tenantValidator,
+		Logger:          logger,
+		Server:          server,
 	}
 }
 
-// GetRouter retorna o router da aplicação
-func (a *App) GetRouter() *gin.Engine {
-	return a.router
+// SetupRoutes configura as rotas da API
+func (a *App) SetupRoutes() {
+	// Middleware para validação de tenant
+	a.Router.Use(pkgtenant.TenantMiddleware(a.TenantValidator))
+
+	// Grupo de rotas para a API v1
+	apiV1 := a.Router.Group("/api/v1")
+
+	// Controladores
+	tenantController := controller.NewTenantController(a.TenantRepo)
+	branchController := controller.NewBranchController(a.BranchRepo)
+	authController := controller.NewAuthController(a.UserRepo)
+	userController := controller.NewUserController(a.UserRepo)
+	customerController := controller.NewCustomerController(a.CustomerRepo, a.Logger)
+
+	// Configurar rotas
+	route.SetupTenantRoutes(apiV1, tenantController)
+	route.SetupBranchRoutes(apiV1, branchController)
+	route.SetupAuthRoutes(apiV1, authController)
+	route.SetupUserRoutes(apiV1, userController)
+	route.RegisterCustomerRoutes(apiV1, customerController)
 }
 
-// Close libera os recursos da aplicação
-func (a *App) Close() {
-	if a.db != nil {
-		a.db.Close()
+// Start inicia o servidor HTTP
+func (a *App) Start() {
+	// Configurar as rotas
+	a.SetupRoutes()
+
+	// Canal para capturar sinais do sistema operacional
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Iniciar o servidor em uma goroutine
+	go func() {
+		log.Println("Servidor iniciado na porta 8080")
+		if err := a.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Erro ao iniciar o servidor: %v", err)
+		}
+	}()
+
+	// Aguardar sinal para encerramento
+	<-quit
+	log.Println("Desligando o servidor...")
+
+	// Criar um contexto com timeout para encerramento
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Encerrar o servidor graciosamente
+	if err := a.Server.Shutdown(ctx); err != nil {
+		log.Fatalf("Erro ao desligar o servidor: %v", err)
 	}
+
+	// Fechar a conexão com o banco de dados
+	a.DB.Close()
+	log.Println("Servidor encerrado")
 }

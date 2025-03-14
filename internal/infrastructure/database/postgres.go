@@ -60,36 +60,51 @@ type PostgresDB struct {
 	config *PostgresConfig
 }
 
-// NewPostgresDB cria uma nova instância de PostgresDB
-func NewPostgresDB(config *PostgresConfig) (*PostgresDB, error) {
-	connString := config.ConnectionString()
+// NewPostgresDB cria uma nova conexão com o banco de dados PostgreSQL
+func NewPostgresDB() (*pgxpool.Pool, error) {
+	// Obter a string de conexão da variável de ambiente
+	connString := os.Getenv("DATABASE_URL")
+	if connString == "" {
+		// Criar a string de conexão a partir de variáveis de ambiente individuais
+		host := getEnvOrDefault("DB_HOST", "localhost")
+		port := getEnvOrDefault("DB_PORT", "5432")
+		user := getEnvOrDefault("DB_USER", "postgres")
+		password := getEnvOrDefault("DB_PASSWORD", "postgres")
+		dbname := getEnvOrDefault("DB_NAME", "super_erp")
+		sslmode := getEnvOrDefault("DB_SSLMODE", "disable")
 
-	// Configuração do pool de conexões
-	poolConfig, err := pgxpool.ParseConfig(connString)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao parsear configuração do pool: %w", err)
+		connString = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			host, port, user, password, dbname, sslmode)
 	}
 
-	// Configuração de limites de conexão
-	poolConfig.MaxConns = config.MaxConnections
-	poolConfig.MinConns = config.MinConnections
-	poolConfig.MaxConnLifetime = config.MaxConnLifetime
+	// Configurar pool de conexões
+	config, err := pgxpool.ParseConfig(connString)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao analisar configuração do pool: %w", err)
+	}
 
-	// Criação do pool
-	pool, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
+	// Ajustar configurações do pool
+	config.MaxConns = 10
+	config.MinConns = 1
+	config.MaxConnLifetime = 1 * time.Hour
+	config.MaxConnIdleTime = 30 * time.Minute
+	config.HealthCheckPeriod = 1 * time.Minute
+
+	// Criar pool de conexões
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao criar pool de conexões: %w", err)
 	}
 
-	// Teste de conexão
-	if err := pool.Ping(context.Background()); err != nil {
-		return nil, fmt.Errorf("erro ao testar conexão com banco: %w", err)
+	// Testar conexão
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := pool.Ping(ctx); err != nil {
+		return nil, fmt.Errorf("erro ao verificar conexão com o banco de dados: %w", err)
 	}
 
-	return &PostgresDB{
-		pool:   pool,
-		config: config,
-	}, nil
+	return pool, nil
 }
 
 // GetConnection retorna uma conexão do pool para uso
@@ -207,4 +222,12 @@ func getEnv(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+// getEnvOrDefault retorna o valor de uma variável de ambiente ou um valor padrão
+func getEnvOrDefault(key, defaultValue string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultValue
 }

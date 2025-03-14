@@ -18,15 +18,11 @@ func main() {
 		log.Printf("Aviso: Arquivo .env não encontrado: %v", err)
 	}
 
-	// Obter configuração do banco de dados
-	config := database.NewPostgresConfigFromEnv()
-
 	// Criar conexão com o banco
-	db, err := database.NewPostgresDB(config)
+	db, err := database.NewPostgresDB()
 	if err != nil {
 		log.Fatalf("Erro ao conectar com o banco de dados: %v", err)
 	}
-	defer db.Close()
 
 	// Executar as migrações
 	if err := runMigrations(db); err != nil {
@@ -36,11 +32,11 @@ func main() {
 	log.Println("Migrações executadas com sucesso!")
 }
 
-func runMigrations(db *database.PostgresDB) error {
+func runMigrations(db *pgxpool.Pool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	conn, err := db.GetConnection(ctx)
+	conn, err := db.Acquire(ctx)
 	if err != nil {
 		return fmt.Errorf("erro ao obter conexão: %w", err)
 	}
