@@ -1,0 +1,27 @@
+# Environment variables
+.env
+
+# Binary files
+bin/
+tmp/
+
+# IDE files
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Docker volumes
+postgres_data/
+pgadmin_data/
+
+# Go files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work 
