@@ -68,6 +68,7 @@ func isExcludedPath(path string) bool {
 		"/api/v1/tenants",
 		"/api/v1/tenants/",
 		"/api/v1/health",
+		"/api/v1/setup/admin", // Rota para criar o primeiro usuário administrador
 	}
 
 	for _, excludedPath := range excludedPaths {

@@ -52,6 +52,12 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 		return ErrUserDuplicateEmail
 	}
 
+	// Preparar branch_id - se for string vazia, enviar NULL para o banco
+	var branchID interface{} = nil
+	if u.BranchID != "" {
+		branchID = u.BranchID
+	}
+
 	// Inserir o usuário
 	query := `
 		INSERT INTO users (
@@ -64,7 +70,7 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 	_, err = conn.Exec(ctx, query,
 		u.ID,
 		u.TenantID,
-		u.BranchID,
+		branchID,
 		u.Name,
 		u.Email,
 		u.Password,
@@ -183,6 +189,66 @@ func (r *UserRepository) FindByEmail(ctx context.Context, tenantID, email string
 			return nil, ErrUserNotFound
 		}
 		return nil, fmt.Errorf("falha ao buscar usuário por email: %w", err)
+	}
+
+	u.Role = user.Role(role)
+	u.Status = user.Status(status)
+	if lastLoginTime.Valid {
+		u.LastLoginAt = lastLoginTime.Time
+	}
+
+	return u, nil
+}
+
+// FindByEmailAcrossTenants implementa user.Repository.FindByEmailAcrossTenants
+func (r *UserRepository) FindByEmailAcrossTenants(ctx context.Context, email string) (*user.User, error) {
+	conn, err := r.db.Acquire(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao obter conexão: %w", err)
+	}
+	defer conn.Release()
+
+	query := `
+		SELECT 
+			id, tenant_id, branch_id, name, email, password, role, status, last_login_at, created_at, updated_at
+		FROM 
+			users
+		WHERE 
+			email = $1
+		LIMIT 1
+	`
+
+	u := &user.User{}
+	var role, status string
+	var lastLoginTime pgtype.Timestamp
+	var branchID pgtype.Text // Usar pgtype.Text para lidar com NULL
+
+	err = conn.QueryRow(ctx, query, email).Scan(
+		&u.ID,
+		&u.TenantID,
+		&branchID,
+		&u.Name,
+		&u.Email,
+		&u.Password,
+		&role,
+		&status,
+		&lastLoginTime,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("falha ao buscar usuário por email em todos os tenants: %w", err)
+	}
+
+	// Converter branchID para string apenas se for válido
+	if branchID.Valid {
+		u.BranchID = branchID.String
+	} else {
+		u.BranchID = "" // String vazia se for NULL
 	}
 
 	u.Role = user.Role(role)
@@ -431,21 +497,35 @@ func (r *UserRepository) UpdateLastLogin(ctx context.Context, id string) error {
 	}
 	defer conn.Release()
 
-	// Obter tenant ID do contexto
+	// Obter tenant ID do contexto, se disponível
 	tenantID := pkgtenant.GetTenantID(ctx)
-	if tenantID == "" {
-		return errors.New("tenant ID não encontrado no contexto")
+
+	var query string
+	var args []interface{}
+
+	if tenantID != "" {
+		// Se tiver tenant_id no contexto, usar na query
+		query = `
+			UPDATE users
+			SET 
+				last_login_at = $1
+			WHERE 
+				id = $2 AND tenant_id = $3
+		`
+		args = []interface{}{time.Now(), id, tenantID}
+	} else {
+		// Se não tiver tenant_id no contexto, buscar apenas pelo ID
+		query = `
+			UPDATE users
+			SET 
+				last_login_at = $1
+			WHERE 
+				id = $2
+		`
+		args = []interface{}{time.Now(), id}
 	}
 
-	query := `
-		UPDATE users
-		SET 
-			last_login_at = $1
-		WHERE 
-			id = $2 AND tenant_id = $3
-	`
-
-	result, err := conn.Exec(ctx, query, time.Now(), id, tenantID)
+	result, err := conn.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("falha ao atualizar último login do usuário: %w", err)
 	}
@@ -561,4 +641,14 @@ func (r *UserRepository) scanUserRows(rows pgx.Rows) ([]*user.User, error) {
 	}
 
 	return users, nil
+}
+
+// TenantExists implementa user.Repository.TenantExists
+func (r *UserRepository) TenantExists(ctx context.Context, tenantID string) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM tenants WHERE id = $1)", tenantID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("falha ao verificar existência do tenant: %w", err)
+	}
+	return exists, nil
 }

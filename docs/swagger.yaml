@@ -1,0 +1,1724 @@
+definitions:
+  dto.AddressRequest:
+    properties:
+      city:
+        type: string
+      complement:
+        type: string
+      country:
+        type: string
+      district:
+        type: string
+      number:
+        type: string
+      state:
+        type: string
+      street:
+        type: string
+      zip_code:
+        type: string
+    type: object
+  dto.AddressResponse:
+    properties:
+      city:
+        type: string
+      complement:
+        type: string
+      country:
+        type: string
+      district:
+        type: string
+      number:
+        type: string
+      state:
+        type: string
+      street:
+        type: string
+      zip_code:
+        type: string
+    type: object
+  dto.BranchListResponse:
+    properties:
+      branches:
+        items:
+          $ref: '#/definitions/dto.BranchResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.BranchRequest:
+    properties:
+      address:
+        $ref: '#/definitions/dto.AddressRequest'
+      code:
+        type: string
+      document:
+        type: string
+      email:
+        type: string
+      is_main:
+        type: boolean
+      name:
+        type: string
+      phone:
+        type: string
+      type:
+        type: string
+    required:
+    - code
+    - name
+    - type
+    type: object
+  dto.BranchResponse:
+    properties:
+      address:
+        $ref: '#/definitions/dto.AddressResponse'
+      code:
+        type: string
+      created_at:
+        type: string
+      document:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_main:
+        type: boolean
+      name:
+        type: string
+      phone:
+        type: string
+      status:
+        type: string
+      tenant_id:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.ChangePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 6
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  dto.CustomerAddressRequest:
+    properties:
+      address_type:
+        type: string
+      city:
+        type: string
+      complement:
+        type: string
+      country:
+        type: string
+      district:
+        type: string
+      number:
+        type: string
+      state:
+        type: string
+      street:
+        type: string
+      zip_code:
+        type: string
+    required:
+    - address_type
+    - city
+    - country
+    - district
+    - number
+    - state
+    - street
+    - zip_code
+    type: object
+  dto.CustomerAddressResponse:
+    properties:
+      address_type:
+        type: string
+      city:
+        type: string
+      complement:
+        type: string
+      country:
+        type: string
+      district:
+        type: string
+      number:
+        type: string
+      state:
+        type: string
+      street:
+        type: string
+      zip_code:
+        type: string
+    type: object
+  dto.CustomerContactRequest:
+    properties:
+      department:
+        type: string
+      email:
+        type: string
+      main_contact:
+        type: boolean
+      mobile_phone:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      position:
+        type: string
+    required:
+    - name
+    type: object
+  dto.CustomerContactResponse:
+    properties:
+      department:
+        type: string
+      email:
+        type: string
+      main_contact:
+        type: boolean
+      mobile_phone:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      position:
+        type: string
+    type: object
+  dto.CustomerListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CustomerResponse'
+        type: array
+      page:
+        type: integer
+      size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.CustomerRequest:
+    properties:
+      addresses:
+        items:
+          $ref: '#/definitions/dto.CustomerAddressRequest'
+        minItems: 1
+        type: array
+      city_document:
+        type: string
+      contacts:
+        items:
+          $ref: '#/definitions/dto.CustomerContactRequest'
+        minItems: 1
+        type: array
+      credit_limit:
+        type: number
+      customer_type:
+        type: string
+      document:
+        type: string
+      external_code:
+        type: string
+      fiscal_notes:
+        type: string
+      name:
+        type: string
+      observations:
+        type: string
+      payment_method_id:
+        type: string
+      payment_term:
+        type: integer
+      person_type:
+        type: string
+      price_table_id:
+        type: string
+      reference_code:
+        type: string
+      salesman_id:
+        type: string
+      state_document:
+        type: string
+      suframa:
+        type: string
+      tax_regime:
+        type: string
+      trade_name:
+        type: string
+      website:
+        type: string
+    required:
+    - addresses
+    - contacts
+    - customer_type
+    - document
+    - name
+    - person_type
+    - tax_regime
+    type: object
+  dto.CustomerResponse:
+    properties:
+      addresses:
+        items:
+          $ref: '#/definitions/dto.CustomerAddressResponse'
+        type: array
+      branch_id:
+        type: string
+      city_document:
+        type: string
+      contacts:
+        items:
+          $ref: '#/definitions/dto.CustomerContactResponse'
+        type: array
+      created_at:
+        type: string
+      credit_limit:
+        type: number
+      customer_type:
+        type: string
+      document:
+        type: string
+      external_code:
+        type: string
+      fiscal_notes:
+        type: string
+      id:
+        type: string
+      last_purchase_at:
+        type: string
+      name:
+        type: string
+      observations:
+        type: string
+      payment_method_id:
+        type: string
+      payment_term:
+        type: integer
+      person_type:
+        type: string
+      price_table_id:
+        type: string
+      reference_code:
+        type: string
+      salesman_id:
+        type: string
+      state_document:
+        type: string
+      status:
+        type: string
+      suframa:
+        type: string
+      tax_regime:
+        type: string
+      tenant_id:
+        type: string
+      trade_name:
+        type: string
+      updated_at:
+        type: string
+      website:
+        type: string
+    type: object
+  dto.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details:
+        type: string
+      message:
+        type: string
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      tenant_id:
+        type: string
+    required:
+    - email
+    - password
+    - tenant_id
+    type: object
+  dto.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  dto.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  dto.TenantListResponse:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      tenants:
+        items:
+          $ref: '#/definitions/dto.TenantResponse'
+        type: array
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.TenantRequest:
+    properties:
+      document:
+        type: string
+      email:
+        type: string
+      max_branches:
+        minimum: 1
+        type: integer
+      name:
+        type: string
+      phone:
+        type: string
+      plan_type:
+        type: string
+    required:
+    - document
+    - name
+    - plan_type
+    type: object
+  dto.TenantResponse:
+    properties:
+      created_at:
+        type: string
+      document:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      max_branches:
+        type: integer
+      name:
+        type: string
+      phone:
+        type: string
+      plan_type:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.UserListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.UserResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.UserRequest:
+    properties:
+      branch_id:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+    required:
+    - email
+    - name
+    - role
+    type: object
+  dto.UserResponse:
+    properties:
+      branch_id:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      last_login_at:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+      tenant_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Verifica as credenciais do usuário e retorna um token JWT
+      parameters:
+      - description: Credenciais de login
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Autentica um usuário
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Retorna informações do usuário autenticado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Retorna informações do usuário atual
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Renova um token JWT existente
+      parameters:
+      - description: Token a ser renovado
+        in: body
+        name: refresh
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Renova um token JWT
+      tags:
+      - auth
+  /branches:
+    get:
+      description: Lista as filiais do tenant com paginação
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: Página
+        in: query
+        name: page
+        type: integer
+      - description: Itens por página
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BranchListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Lista as filiais
+      tags:
+      - branches
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova filial no sistema
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: Dados da filial
+        in: body
+        name: branch
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BranchRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.BranchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Cria uma nova filial
+      tags:
+      - branches
+  /branches/{id}:
+    delete:
+      description: Remove uma filial do sistema
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID da filial
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Remove uma filial
+      tags:
+      - branches
+    get:
+      description: Busca uma filial pelo seu ID
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID da filial
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BranchResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Busca uma filial pelo ID
+      tags:
+      - branches
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados de uma filial existente
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID da filial
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados da filial
+        in: body
+        name: branch
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BranchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BranchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Atualiza uma filial
+      tags:
+      - branches
+  /branches/{id}/status/{status}:
+    patch:
+      description: Atualiza o status de uma filial (ativa/inativa)
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID da filial
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Novo status (active/inactive)
+        in: path
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BranchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Atualiza o status de uma filial
+      tags:
+      - branches
+  /branches/main:
+    get:
+      description: Busca a filial principal do tenant
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BranchResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Busca a filial principal
+      tags:
+      - branches
+  /customers:
+    get:
+      consumes:
+      - application/json
+      description: Retorna a lista de clientes paginada
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Número da página
+        in: query
+        name: page
+        type: integer
+      - description: Tamanho da página
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Listar clientes
+      tags:
+      - customers
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo cliente no sistema
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Dados do cliente
+        in: body
+        name: customer
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CustomerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Criar cliente
+      tags:
+      - customers
+  /customers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Exclui um cliente do sistema
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Excluir cliente
+      tags:
+      - customers
+    get:
+      consumes:
+      - application/json
+      description: Retorna os dados de um cliente pelo ID
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Buscar cliente
+      tags:
+      - customers
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados de um cliente
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do cliente
+        in: body
+        name: customer
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Atualizar cliente
+      tags:
+      - customers
+  /customers/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Atualiza o status de um cliente
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Novo status
+        in: body
+        name: status
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Atualizar status do cliente
+      tags:
+      - customers
+  /customers/document/{document}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os dados de um cliente pelo documento (CPF/CNPJ)
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Documento do cliente
+        in: path
+        name: document
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Buscar cliente por documento
+      tags:
+      - customers
+  /customers/search:
+    get:
+      consumes:
+      - application/json
+      description: Retorna a lista de clientes que contêm o nome informado
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Nome do cliente
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: Número da página
+        in: query
+        name: page
+        type: integer
+      - description: Tamanho da página
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Buscar clientes por nome
+      tags:
+      - customers
+  /tenants:
+    get:
+      description: Lista os tenants com paginação
+      parameters:
+      - description: Página
+        in: query
+        name: page
+        type: integer
+      - description: Itens por página
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TenantListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Lista os tenants
+      tags:
+      - tenants
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo tenant no sistema
+      parameters:
+      - description: Dados do tenant
+        in: body
+        name: tenant
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TenantRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.TenantResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Cria um novo tenant
+      tags:
+      - tenants
+  /tenants/{id}:
+    delete:
+      description: Remove um tenant do sistema
+      parameters:
+      - description: ID do tenant
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Remove um tenant
+      tags:
+      - tenants
+    get:
+      description: Busca um tenant pelo seu ID
+      parameters:
+      - description: ID do tenant
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TenantResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Busca um tenant pelo ID
+      tags:
+      - tenants
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados de um tenant existente
+      parameters:
+      - description: ID do tenant
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do tenant
+        in: body
+        name: tenant
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TenantRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TenantResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Atualiza um tenant
+      tags:
+      - tenants
+  /tenants/{id}/status/{status}:
+    patch:
+      description: Atualiza o status de um tenant (ativo/inativo)
+      parameters:
+      - description: ID do tenant
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Novo status (active/inactive)
+        in: path
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TenantResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Atualiza o status de um tenant
+      tags:
+      - tenants
+  /tenants/document/{document}:
+    get:
+      description: Busca um tenant pelo seu documento (CNPJ/CPF)
+      parameters:
+      - description: Documento do tenant
+        in: path
+        name: document
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TenantResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Busca um tenant pelo documento
+      tags:
+      - tenants
+  /users:
+    get:
+      description: Lista os usuários do tenant com paginação
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: Página
+        in: query
+        name: page
+        type: integer
+      - description: Itens por página
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Lista os usuários
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo usuário no sistema
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: Dados do usuário
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Cria um novo usuário
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      description: Remove um usuário do sistema
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Remove um usuário
+      tags:
+      - users
+    get:
+      description: Busca um usuário pelo seu ID
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Busca um usuário pelo ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Atualiza os dados de um usuário existente
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do usuário
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Atualiza um usuário
+      tags:
+      - users
+  /users/{id}/password:
+    patch:
+      consumes:
+      - application/json
+      description: Permite que um usuário altere sua própria senha
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados para troca de senha
+        in: body
+        name: password
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Altera a senha de um usuário
+      tags:
+      - users
+  /users/{id}/status/{status}:
+    patch:
+      description: Atualiza o status de um usuário (ativo/inativo/bloqueado)
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID do usuário
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Novo status (active/inactive/blocked)
+        in: path
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Atualiza o status de um usuário
+      tags:
+      - users
+  /users/branch/{branch_id}:
+    get:
+      description: Lista os usuários de uma filial específica com paginação
+      parameters:
+      - description: ID do tenant
+        in: header
+        name: tenant-id
+        required: true
+        type: string
+      - description: ID da filial
+        in: path
+        name: branch_id
+        required: true
+        type: string
+      - description: Página
+        in: query
+        name: page
+        type: integer
+      - description: Itens por página
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Lista os usuários de uma filial
+      tags:
+      - users
+swagger: "2.0"

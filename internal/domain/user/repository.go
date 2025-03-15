@@ -15,6 +15,9 @@ type Repository interface {
 	// FindByEmail busca um usuário pelo email dentro de um tenant
 	FindByEmail(ctx context.Context, tenantID, email string) (*User, error)
 
+	// FindByEmailAcrossTenants busca um usuário pelo email em todos os tenants
+	FindByEmailAcrossTenants(ctx context.Context, email string) (*User, error)
+
 	// FindByBranch lista os usuários de uma determinada filial
 	FindByBranch(ctx context.Context, branchID string, limit, offset int) ([]*User, error)
 
@@ -44,4 +47,7 @@ type Repository interface {
 
 	// Exists verifica se um usuário existe
 	Exists(ctx context.Context, id string) (bool, error)
+
+	// TenantExists verifica se um tenant existe
+	TenantExists(ctx context.Context, tenantID string) (bool, error)
 }

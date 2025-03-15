@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -77,17 +78,27 @@ func GenerateToken(userID, tenantID, branchID string, expiresIn time.Duration) (
 		IssuedAt:  time.Now().Unix(),
 	}
 
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		return "", errors.New("chave secreta JWT não configurada")
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte("secret")) // TODO: Usar variável de ambiente
+	return token.SignedString([]byte(secretKey))
 }
 
 // ValidateToken valida um token JWT
 func ValidateToken(tokenString string) (*Claims, error) {
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		return nil, errors.New("chave secreta JWT não configurada")
+	}
+
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken
 		}
-		return []byte("secret"), nil // TODO: Usar variável de ambiente
+		return []byte(secretKey), nil
 	})
 
 	if err != nil {

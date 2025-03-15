@@ -43,8 +43,18 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		return
 	}
 
-	// Buscar o usuário pelo email
-	u, err := c.userRepository.FindByEmail(ctx, request.TenantID, request.Email)
+	var u *user.User
+	var err error
+
+	// Buscar o usuário pelo email - com ou sem tenant_id
+	if request.TenantID != "" {
+		// Se o tenant_id foi fornecido, buscar no tenant específico
+		u, err = c.userRepository.FindByEmail(ctx, request.TenantID, request.Email)
+	} else {
+		// Se o tenant_id não foi fornecido, buscar em todos os tenants
+		u, err = c.userRepository.FindByEmailAcrossTenants(ctx, request.Email)
+	}
+
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			ctx.JSON(http.StatusUnauthorized, dto.NewErrorResponse(http.StatusUnauthorized, "Credenciais inválidas", "Email ou senha incorretos"))

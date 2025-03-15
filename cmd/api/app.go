@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/api/controller"
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/api/route"
@@ -21,6 +22,11 @@ import (
 	"github.com/hugohenrick/erp-supermercado/pkg/logger"
 	pkgtenant "github.com/hugohenrick/erp-supermercado/pkg/tenant"
 	"github.com/jackc/pgx/v5/pgxpool"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	// Importação necessária para inicializar a documentação Swagger
+	_ "github.com/hugohenrick/erp-supermercado/docs"
 )
 
 // App representa a aplicação
@@ -59,9 +65,25 @@ func NewApp() *App {
 	// Inicializar o router Gin
 	router := gin.Default()
 
+	// Configuração do CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Tenant-ID", "tenant-id"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	// Obter a porta da API das variáveis de ambiente
+	apiPort := os.Getenv("API_PORT")
+	if apiPort == "" {
+		apiPort = "8084" // Valor padrão se não estiver definido
+	}
+
 	// Configuração do servidor HTTP
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + apiPort,
 		Handler: router,
 	}
 
@@ -80,11 +102,14 @@ func NewApp() *App {
 
 // SetupRoutes configura as rotas da API
 func (a *App) SetupRoutes() {
-	// Middleware para validação de tenant
-	a.Router.Use(pkgtenant.TenantMiddleware(a.TenantValidator))
+	// Configuração do Swagger - posicionado antes do middleware para não exigir tenant
+	a.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Grupo de rotas para a API v1
 	apiV1 := a.Router.Group("/api/v1")
+
+	// Middleware para validação de tenant aplicado apenas nas rotas da API
+	apiV1.Use(pkgtenant.TenantMiddleware(a.TenantValidator))
 
 	// Controladores
 	tenantController := controller.NewTenantController(a.TenantRepo)
@@ -99,6 +124,7 @@ func (a *App) SetupRoutes() {
 	route.SetupAuthRoutes(apiV1, authController)
 	route.SetupUserRoutes(apiV1, userController)
 	route.RegisterCustomerRoutes(apiV1, customerController)
+	route.SetupSetupRoutes(apiV1, userController)
 }
 
 // Start inicia o servidor HTTP
@@ -112,7 +138,8 @@ func (a *App) Start() {
 
 	// Iniciar o servidor em uma goroutine
 	go func() {
-		log.Println("Servidor iniciado na porta 8080")
+		log.Println("Servidor iniciado na porta 8084")
+		log.Println("Documentação Swagger disponível em: http://localhost:8084/swagger/index.html")
 		if err := a.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Erro ao iniciar o servidor: %v", err)
 		}

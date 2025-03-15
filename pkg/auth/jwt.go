@@ -36,16 +36,16 @@ type JWTService struct {
 
 // NewJWTService cria uma nova instância de JWTService
 func NewJWTService() (*JWTService, error) {
-	secretKey := os.Getenv("JWT_SECRET_KEY")
+	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {
 		return nil, ErrMissingJWTKey
 	}
 
 	// Duração padrão de 24 horas se não for configurado
-	expirationStr := os.Getenv("JWT_EXPIRATION_HOURS")
+	expirationStr := os.Getenv("JWT_EXPIRATION")
 	expiration := 24 * time.Hour
 	if expirationStr != "" {
-		expirationHours, err := time.ParseDuration(expirationStr + "h")
+		expirationHours, err := time.ParseDuration(expirationStr)
 		if err == nil {
 			expiration = expirationHours
 		}

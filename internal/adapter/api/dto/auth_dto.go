@@ -8,7 +8,7 @@ import (
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
-	TenantID string `json:"tenant_id" binding:"required"`
+	TenantID string `json:"tenant_id"`
 }
 
 // LoginResponse representa a resposta de login bem-sucedido

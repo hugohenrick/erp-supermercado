@@ -472,3 +472,110 @@ func (c *UserController) UpdateStatus(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, dto.ToUserResponse(u))
 }
+
+// CreateAdminUser cria o primeiro usuário administrador para um tenant
+// @Summary Cria o primeiro usuário administrador
+// @Description Cria o primeiro usuário administrador para um tenant (não requer autenticação)
+// @Tags setup
+// @Accept json
+// @Produce json
+// @Param tenant-id header string true "ID do tenant"
+// @Param user body dto.UserRequest true "Dados do usuário administrador"
+// @Success 201 {object} dto.UserResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 409 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /setup/admin [post]
+func (c *UserController) CreateAdminUser(ctx *gin.Context) {
+	var request dto.UserRequest
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, dto.NewErrorResponse(http.StatusBadRequest, "Requisição inválida", err.Error()))
+		return
+	}
+
+	// Verificar se a senha foi fornecida (obrigatória para novos usuários)
+	if request.Password == "" {
+		ctx.JSON(http.StatusBadRequest, dto.NewErrorResponse(http.StatusBadRequest, "Senha requerida", "A senha é obrigatória para novos usuários"))
+		return
+	}
+
+	// Verificar se o Role foi fornecido e definir como ADMIN se não foi
+	if request.Role == "" {
+		request.Role = string(user.RoleAdmin)
+	}
+
+	// Obter tenant ID do cabeçalho
+	tenantID := ctx.GetHeader("tenant-id")
+	if tenantID == "" {
+		ctx.JSON(http.StatusBadRequest, dto.NewErrorResponse(http.StatusBadRequest, "Tenant ID não fornecido", "O cabeçalho 'tenant-id' é obrigatório"))
+		return
+	}
+
+	// Verificar se o tenant existe
+	tenantExists, err := c.userRepository.TenantExists(ctx, tenantID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, dto.NewErrorResponse(http.StatusInternalServerError, "Erro ao verificar tenant", err.Error()))
+		return
+	}
+	if !tenantExists {
+		ctx.JSON(http.StatusBadRequest, dto.NewErrorResponse(http.StatusBadRequest, "Tenant inválido", "O tenant informado não existe"))
+		return
+	}
+
+	// Verificar se já existe algum usuário para este tenant
+	usersCount, err := c.userRepository.CountByTenant(ctx, tenantID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, dto.NewErrorResponse(http.StatusInternalServerError, "Erro ao verificar usuários existentes", err.Error()))
+		return
+	}
+	if usersCount > 0 {
+		ctx.JSON(http.StatusConflict, dto.NewErrorResponse(http.StatusConflict, "Usuário administrador já existe", "Já existe pelo menos um usuário para este tenant"))
+		return
+	}
+
+	// Forçar o papel como admin
+	request.Role = string(user.RoleAdmin)
+
+	// Garantir que branch_id não seja uma string vazia
+	branchID := request.BranchID
+	if branchID == "" {
+		branchID = "" // Mantem vazio e será tratado como NULL no repositório
+	}
+
+	// Gerar um ID para o novo usuário
+	id := uuid.New().String()
+
+	// Criar o modelo de domínio a partir do DTO
+	u := &user.User{
+		ID:          id,
+		TenantID:    tenantID,
+		BranchID:    branchID,
+		Name:        request.Name,
+		Email:       request.Email,
+		Role:        user.RoleAdmin, // Forçar como admin
+		Status:      user.StatusActive,
+		LastLoginAt: time.Time{},
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	// Definir a senha com hash
+	if err := u.SetPassword(request.Password); err != nil {
+		ctx.JSON(http.StatusInternalServerError, dto.NewErrorResponse(http.StatusInternalServerError, "Erro ao processar senha", err.Error()))
+		return
+	}
+
+	// Persistir o usuário
+	err = c.userRepository.Create(ctx, u)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserDuplicateEmail) {
+			ctx.JSON(http.StatusConflict, dto.NewErrorResponse(http.StatusConflict, "Usuário com mesmo email já existe", ""))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, dto.NewErrorResponse(http.StatusInternalServerError, "Erro ao criar usuário", err.Error()))
+		return
+	}
+
+	// Retornar o usuário criado
+	ctx.JSON(http.StatusCreated, dto.ToUserResponse(u))
+}
