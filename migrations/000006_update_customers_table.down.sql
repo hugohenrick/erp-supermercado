@@ -1,0 +1,3 @@
+-- Este script é intencionalmente deixado vazio para evitar a perda de dados
+-- Se precisar reverter essa migração, recomendamos fazer isso manualmente
+-- ou adicionar aqui os comandos específicos para seu caso 

@@ -195,6 +195,24 @@ func (r *CustomerRepository) FindByBranch(ctx context.Context, branchID string, 
 
 // List implementa customer.Repository.List
 func (r *CustomerRepository) List(ctx context.Context, tenantID string, limit, offset int) ([]*customer.Customer, error) {
+	// Primeiro, vamos verificar se a coluna person_type existe
+	var columnExists bool
+	err := r.db.QueryRow(ctx,
+		`SELECT EXISTS (
+			SELECT 1 
+			FROM information_schema.columns 
+			WHERE table_name = 'customers' AND column_name = 'person_type'
+		)`).Scan(&columnExists)
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao verificar coluna person_type: %w", err)
+	}
+
+	if !columnExists {
+		return nil, fmt.Errorf("coluna person_type não existe na tabela customers")
+	}
+
+	// Prosseguir com a consulta original
 	rows, err := r.db.Query(ctx,
 		`SELECT 
 			id, tenant_id, branch_id, person_type, name, trade_name, document,
