@@ -41,9 +41,30 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 	}
 	defer conn.Release()
 
+	// Primeiro, definir o search_path para public para garantir que acessamos os tenants
+	_, err = conn.Exec(ctx, "SET search_path TO public")
+	if err != nil {
+		return fmt.Errorf("falha ao configurar search_path: %w", err)
+	}
+
+	// Obter o schema do tenant a partir do tenant_id
+	var schema string
+	err = conn.QueryRow(ctx, "SELECT schema FROM public.tenants WHERE id = $1", u.TenantID).Scan(&schema)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return errors.New("tenant não encontrado")
+		}
+		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
+	}
+
+	// Debug para verificar o schema recuperado
+	fmt.Printf("DEBUG Create - Tenant ID: %s, Schema: %s\n", u.TenantID, schema)
+
 	// Verificar se já existe um usuário com o mesmo email no mesmo tenant
+	// Note que esta verificação precisa ocorrer no schema específico do tenant
 	var exists bool
-	err = conn.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE tenant_id = $1 AND email = $2)", u.TenantID, u.Email).Scan(&exists)
+	checkQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s.users WHERE tenant_id = $1 AND email = $2)", schema)
+	err = conn.QueryRow(ctx, checkQuery, u.TenantID, u.Email).Scan(&exists)
 	if err != nil {
 		return fmt.Errorf("falha ao verificar existência do usuário: %w", err)
 	}
@@ -58,14 +79,14 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 		branchID = u.BranchID
 	}
 
-	// Inserir o usuário
-	query := `
-		INSERT INTO users (
+	// Inserir o usuário no schema específico do tenant
+	query := fmt.Sprintf(`
+		INSERT INTO %s.users (
 			id, tenant_id, branch_id, name, email, password, role, status, last_login_at, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 		)
-	`
+	`, schema)
 
 	_, err = conn.Exec(ctx, query,
 		u.ID,
@@ -157,14 +178,25 @@ func (r *UserRepository) FindByEmail(ctx context.Context, tenantID, email string
 	}
 	defer conn.Release()
 
-	query := `
+	// Obter o schema do tenant a partir do tenant_id
+	var schema string
+	err = conn.QueryRow(ctx, "SELECT schema FROM public.tenants WHERE id = $1", tenantID).Scan(&schema)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("tenant não encontrado")
+		}
+		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
+	}
+
+	// Construir a query usando o schema específico do tenant
+	query := fmt.Sprintf(`
 		SELECT 
 			id, tenant_id, branch_id, name, email, password, role, status, last_login_at, created_at, updated_at
 		FROM 
-			users
+			%s.users
 		WHERE 
 			tenant_id = $1 AND email = $2
-	`
+	`, schema)
 
 	u := &user.User{}
 	var role, status string
@@ -208,56 +240,120 @@ func (r *UserRepository) FindByEmailAcrossTenants(ctx context.Context, email str
 	}
 	defer conn.Release()
 
-	query := `
-		SELECT 
-			id, tenant_id, branch_id, name, email, password, role, status, last_login_at, created_at, updated_at
-		FROM 
-			users
-		WHERE 
-			email = $1
-		LIMIT 1
-	`
-
-	u := &user.User{}
-	var role, status string
-	var lastLoginTime pgtype.Timestamp
-	var branchID pgtype.Text // Usar pgtype.Text para lidar com NULL
-
-	err = conn.QueryRow(ctx, query, email).Scan(
-		&u.ID,
-		&u.TenantID,
-		&branchID,
-		&u.Name,
-		&u.Email,
-		&u.Password,
-		&role,
-		&status,
-		&lastLoginTime,
-		&u.CreatedAt,
-		&u.UpdatedAt,
-	)
-
+	// Primeiro, definir o search_path para public para garantir que acessamos os tenants
+	_, err = conn.Exec(ctx, "SET search_path TO public")
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrUserNotFound
+		return nil, fmt.Errorf("falha ao configurar search_path: %w", err)
+	}
+
+	// Obter todos os schemas de tenants
+	rows, err := conn.Query(ctx, "SELECT id, schema FROM public.tenants")
+	if err != nil {
+		return nil, fmt.Errorf("falha ao obter schemas dos tenants: %w", err)
+	}
+	defer rows.Close()
+
+	// Lista para armazenar os schemas e IDs dos tenants
+	type tenantInfo struct {
+		ID     string
+		Schema string
+	}
+	var tenants []tenantInfo
+
+	// Processar os resultados
+	for rows.Next() {
+		var t tenantInfo
+		if err := rows.Scan(&t.ID, &t.Schema); err != nil {
+			return nil, fmt.Errorf("falha ao ler dados do tenant: %w", err)
 		}
-		return nil, fmt.Errorf("falha ao buscar usuário por email em todos os tenants: %w", err)
+		tenants = append(tenants, t)
+
+		// Debug: printar o ID e schema do tenant
+		fmt.Printf("DEBUG - Tenant ID: %s, Schema: %s\n", t.ID, t.Schema)
 	}
 
-	// Converter branchID para string apenas se for válido
-	if branchID.Valid {
-		u.BranchID = branchID.String
-	} else {
-		u.BranchID = "" // String vazia se for NULL
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar resultados dos tenants: %w", err)
 	}
 
-	u.Role = user.Role(role)
-	u.Status = user.Status(status)
-	if lastLoginTime.Valid {
-		u.LastLoginAt = lastLoginTime.Time
+	// Verificar se temos tenants para procurar
+	if len(tenants) == 0 {
+		return nil, ErrUserNotFound
 	}
 
-	return u, nil
+	// Procurar o usuário em cada schema de tenant
+	for _, tenant := range tenants {
+		// Garantir que o schema é válido
+		if tenant.Schema == "" {
+			fmt.Printf("DEBUG - Ignorando tenant %s com schema vazio\n", tenant.ID)
+			continue
+		}
+
+		// Query para buscar o usuário no schema específico
+		query := fmt.Sprintf(`
+			SELECT 
+				id, tenant_id, branch_id, name, email, password, role, status, last_login_at, created_at, updated_at
+			FROM 
+				%s.users
+			WHERE 
+				email = $1
+			LIMIT 1
+		`, tenant.Schema)
+
+		// Debug: printar a query completa
+		fmt.Printf("DEBUG - Executing query: %s with email: %s\n", query, email)
+
+		u := &user.User{}
+		var role, status string
+		var lastLoginTime pgtype.Timestamp
+		var branchID pgtype.Text // Usar pgtype.Text para lidar com NULL
+
+		err = conn.QueryRow(ctx, query, email).Scan(
+			&u.ID,
+			&u.TenantID,
+			&branchID,
+			&u.Name,
+			&u.Email,
+			&u.Password,
+			&role,
+			&status,
+			&lastLoginTime,
+			&u.CreatedAt,
+			&u.UpdatedAt,
+		)
+
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				// Se não encontrou neste tenant, continuar procurando no próximo
+				fmt.Printf("DEBUG - Usuário não encontrado no tenant %s\n", tenant.ID)
+				continue
+			}
+			// Se foi outro erro, logar para debug mas continuar tentando outros tenants
+			fmt.Printf("DEBUG - Erro ao buscar usuário em %s: %v\n", tenant.Schema, err)
+			continue
+		}
+
+		// Encontrou o usuário, converter os campos
+		if branchID.Valid {
+			u.BranchID = branchID.String
+		} else {
+			u.BranchID = "" // String vazia se for NULL
+		}
+
+		u.Role = user.Role(role)
+		u.Status = user.Status(status)
+		if lastLoginTime.Valid {
+			u.LastLoginAt = lastLoginTime.Time
+		}
+
+		fmt.Printf("DEBUG - Usuário encontrado no tenant %s\n", tenant.ID)
+
+		// Retornar o usuário encontrado
+		return u, nil
+	}
+
+	// Se chegou aqui, o usuário não foi encontrado em nenhum tenant
+	return nil, ErrUserNotFound
 }
 
 // FindByBranch implementa user.Repository.FindByBranch
@@ -545,8 +641,29 @@ func (r *UserRepository) CountByTenant(ctx context.Context, tenantID string) (in
 	}
 	defer conn.Release()
 
+	// Primeiro, definir o search_path para public para garantir que acessamos os tenants
+	_, err = conn.Exec(ctx, "SET search_path TO public")
+	if err != nil {
+		return 0, fmt.Errorf("falha ao configurar search_path: %w", err)
+	}
+
+	// Obter o schema do tenant a partir do tenant_id
+	var schema string
+	err = conn.QueryRow(ctx, "SELECT schema FROM public.tenants WHERE id = $1", tenantID).Scan(&schema)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, errors.New("tenant não encontrado")
+		}
+		return 0, fmt.Errorf("falha ao obter schema do tenant: %w", err)
+	}
+
+	// Debug para verificar o schema recuperado
+	fmt.Printf("DEBUG CountByTenant - Tenant ID: %s, Schema: %s\n", tenantID, schema)
+
+	// Contar usuários no schema específico do tenant
 	var count int
-	err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE tenant_id = $1", tenantID).Scan(&count)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.users WHERE tenant_id = $1", schema)
+	err = conn.QueryRow(ctx, query, tenantID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("falha ao contar usuários: %w", err)
 	}
@@ -645,10 +762,24 @@ func (r *UserRepository) scanUserRows(rows pgx.Rows) ([]*user.User, error) {
 
 // TenantExists implementa user.Repository.TenantExists
 func (r *UserRepository) TenantExists(ctx context.Context, tenantID string) (bool, error) {
+	conn, err := r.db.Acquire(ctx)
+	if err != nil {
+		return false, fmt.Errorf("falha ao obter conexão: %w", err)
+	}
+	defer conn.Release()
+
+	// Primeiro, configurar o search_path para garantir que estamos consultando o schema public
+	_, err = conn.Exec(ctx, "SET search_path TO public")
+	if err != nil {
+		return false, fmt.Errorf("falha ao configurar search_path: %w", err)
+	}
+
+	// Verificar se o tenant existe especificando explicitamente o schema public
 	var exists bool
-	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM tenants WHERE id = $1)", tenantID).Scan(&exists)
+	err = conn.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM public.tenants WHERE id = $1)", tenantID).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("falha ao verificar existência do tenant: %w", err)
 	}
+
 	return exists, nil
 }

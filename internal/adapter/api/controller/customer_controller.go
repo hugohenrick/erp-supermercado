@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/api/dto"
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/repository"
 	customerdomain "github.com/hugohenrick/erp-supermercado/internal/domain/customer"
+	pkgbranch "github.com/hugohenrick/erp-supermercado/pkg/branch"
 	"github.com/hugohenrick/erp-supermercado/pkg/logger"
 	"github.com/hugohenrick/erp-supermercado/pkg/tenant"
 )
@@ -193,6 +195,30 @@ func (c *CustomerController) List(ctx *gin.Context) {
 	offset := (page - 1) * size
 
 	tenantID := tenant.GetTenantID(ctx)
+
+	// Obter o branch_id do cabeçalho
+	branchID := ctx.GetHeader("branch-id")
+
+	// Se tiver um branch_id, defina-o explicitamente em todos os lugares possíveis
+	if branchID != "" {
+		// Armazenar no contexto do Gin para utilização posterior
+		ctx.Set("branch_id", branchID)
+
+		// Também definir no contexto da requisição com a chave do pacote branch
+		ctx.Request = ctx.Request.WithContext(
+			context.WithValue(ctx.Request.Context(), pkgbranch.BranchIDKeyType(), branchID))
+
+		// Definir também como chave string simples
+		ctx.Request = ctx.Request.WithContext(
+			context.WithValue(ctx.Request.Context(), "branch_id", branchID))
+	}
+
+	// Debug para verificar se o branch_id está sendo recebido corretamente
+	c.logger.Debug("List Customer - Filtrando clientes",
+		"tenant_id", tenantID,
+		"branch_id", branchID,
+		"page", page,
+		"size", size)
 
 	customers, err := c.customerRepo.List(ctx, tenantID, size, offset)
 	if err != nil {

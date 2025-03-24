@@ -19,6 +19,7 @@ import (
 	"github.com/hugohenrick/erp-supermercado/internal/domain/tenant"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/user"
 	"github.com/hugohenrick/erp-supermercado/internal/infrastructure/database"
+	pkgbranch "github.com/hugohenrick/erp-supermercado/pkg/branch"
 	"github.com/hugohenrick/erp-supermercado/pkg/logger"
 	pkgtenant "github.com/hugohenrick/erp-supermercado/pkg/tenant"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -69,7 +70,7 @@ func NewApp() *App {
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Tenant-ID", "tenant-id"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Tenant-ID", "tenant-id", "branch-id"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -111,8 +112,11 @@ func (a *App) SetupRoutes() {
 	// Middleware para validação de tenant aplicado apenas nas rotas da API
 	apiV1.Use(pkgtenant.TenantMiddleware(a.TenantValidator))
 
+	// Middleware para capturar o branch_id do cabeçalho
+	apiV1.Use(pkgbranch.BranchMiddleware())
+
 	// Controladores
-	tenantController := controller.NewTenantController(a.TenantRepo)
+	tenantController := controller.NewTenantController(a.TenantRepo, a.DB)
 	branchController := controller.NewBranchController(a.BranchRepo)
 	authController := controller.NewAuthController(a.UserRepo)
 	userController := controller.NewUserController(a.UserRepo)

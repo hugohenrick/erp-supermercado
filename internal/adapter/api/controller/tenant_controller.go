@@ -1,8 +1,12 @@
 package controller
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
+	"path"
 	"strconv"
 	"time"
 
@@ -11,17 +15,20 @@ import (
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/api/dto"
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/repository"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/tenant"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TenantController gerencia as requisições relacionadas a tenants
+// TenantController gerencia as requisições relacionadas aos tenants
 type TenantController struct {
 	tenantRepository tenant.Repository
+	db               *pgxpool.Pool
 }
 
 // NewTenantController cria uma nova instância de TenantController
-func NewTenantController(tenantRepository tenant.Repository) *TenantController {
+func NewTenantController(tenantRepository tenant.Repository, db *pgxpool.Pool) *TenantController {
 	return &TenantController{
 		tenantRepository: tenantRepository,
+		db:               db,
 	}
 }
 
@@ -68,16 +75,181 @@ func (c *TenantController) Create(ctx *gin.Context) {
 	// Persistir o tenant
 	err := c.tenantRepository.Create(ctx, t)
 	if err != nil {
-		if errors.Is(err, repository.ErrDuplicateKey) {
-			ctx.JSON(http.StatusConflict, dto.NewErrorResponse(http.StatusConflict, "Tenant com mesmo documento já existe", ""))
+		if err == repository.ErrTenantDuplicateDocument {
+			ctx.JSON(http.StatusConflict, dto.NewErrorResponse(http.StatusConflict, "Tenant já existe", "Um tenant com este documento já está cadastrado"))
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, dto.NewErrorResponse(http.StatusInternalServerError, "Erro ao criar tenant", err.Error()))
 		return
 	}
 
+	// Criar o schema para o tenant no banco de dados
+	err = c.createTenantSchema(ctx, id, schema)
+	if err != nil {
+		// Se falhar ao criar o schema, excluir o tenant para manter a consistência
+		deleteErr := c.tenantRepository.Delete(ctx, id)
+		if deleteErr != nil {
+			// Logar o erro de exclusão, mas continuar com o erro principal
+			// Em um ambiente de produção, isso deveria ser registrado em um sistema de logs
+			// logger.Error("Falha ao excluir tenant após falha na criação do schema", "error", deleteErr)
+		}
+
+		ctx.JSON(http.StatusInternalServerError, dto.NewErrorResponse(
+			http.StatusInternalServerError,
+			"Erro ao criar schema do tenant",
+			err.Error(),
+		))
+		return
+	}
+
 	// Retornar o tenant criado
-	ctx.JSON(http.StatusCreated, dto.ToTenantResponse(t))
+	response := dto.ToTenantResponse(t)
+	ctx.JSON(http.StatusCreated, response)
+}
+
+// createTenantSchema cria um novo schema no banco de dados para o tenant
+func (c *TenantController) createTenantSchema(ctx context.Context, tenantID, schema string) error {
+	conn, err := c.db.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("erro ao adquirir conexão do pool: %w", err)
+	}
+	defer conn.Release()
+
+	// Criar schema
+	_, err = conn.Exec(ctx, fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", schema))
+	if err != nil {
+		return fmt.Errorf("erro ao criar schema: %w", err)
+	}
+
+	// Configurar permissões
+	_, err = conn.Exec(ctx, fmt.Sprintf("GRANT ALL ON SCHEMA %s TO CURRENT_USER", schema))
+	if err != nil {
+		return fmt.Errorf("erro ao configurar permissões do schema: %w", err)
+	}
+
+	// Aplicar migrações no schema do tenant
+	err = c.applyTenantMigrations(ctx, schema)
+	if err != nil {
+		return fmt.Errorf("erro ao aplicar migrações no schema do tenant: %w", err)
+	}
+
+	return nil
+}
+
+// applyTenantMigrations executa as migrações necessárias no schema do tenant
+func (c *TenantController) applyTenantMigrations(ctx context.Context, schema string) error {
+	// Lista de migrações a serem aplicadas, na ordem correta
+	migrations := []struct {
+		description string
+		filename    string
+	}{
+		{
+			description: "Criação da tabela de filiais (branches)",
+			filename:    "/home/hugohenrick/Estudos/Cursor/super/erp-supermercado/migrations/tenant/000001_create_branches_table.up.sql",
+		},
+		{
+			description: "Criação da tabela de usuários (users)",
+			filename:    "/home/hugohenrick/Estudos/Cursor/super/erp-supermercado/migrations/tenant/000002_create_users_table.up.sql",
+		},
+		{
+			description: "Criação da tabela de categorias de produtos",
+			filename:    "/home/hugohenrick/Estudos/Cursor/super/erp-supermercado/migrations/tenant/000003_create_product_categories_table.up.sql",
+		},
+		{
+			description: "Criação da tabela de produtos",
+			filename:    "/home/hugohenrick/Estudos/Cursor/super/erp-supermercado/migrations/tenant/000004_create_products_table.up.sql",
+		},
+		{
+			description: "Criação das tabelas de estoque",
+			filename:    "/home/hugohenrick/Estudos/Cursor/super/erp-supermercado/migrations/tenant/000005_create_inventory_tables.up.sql",
+		},
+		{
+			description: "Criação da tabela de clientes",
+			filename:    "/home/hugohenrick/Estudos/Cursor/super/erp-supermercado/migrations/tenant/000006_create_customers_table.up.sql",
+		},
+	}
+
+	conn, err := c.db.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("erro ao adquirir conexão do pool: %w", err)
+	}
+	defer conn.Release()
+
+	// Tabela para rastrear migrações aplicadas neste schema
+	_, err = conn.Exec(ctx, fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s.schema_migrations (
+			version VARCHAR(255) PRIMARY KEY,
+			applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`, schema))
+	if err != nil {
+		return fmt.Errorf("erro ao criar tabela de controle de migrações: %w", err)
+	}
+
+	// Para cada migração, verificar se já foi aplicada e aplicar se necessário
+	for _, migration := range migrations {
+		// Verificar se a migração já foi aplicada
+		var exists bool
+		err = conn.QueryRow(ctx, fmt.Sprintf(`
+			SELECT EXISTS(
+				SELECT 1 FROM %s.schema_migrations WHERE version = $1
+			)`, schema), path.Base(migration.filename)).Scan(&exists)
+
+		if err != nil {
+			return fmt.Errorf("erro ao verificar migração: %w", err)
+		}
+
+		// Se a migração já foi aplicada, pular
+		if exists {
+			continue
+		}
+
+		// Ler o conteúdo do arquivo de migração
+		sqlContent, err := os.ReadFile(migration.filename)
+		if err != nil {
+			return fmt.Errorf("erro ao ler arquivo de migração %s: %w", migration.filename, err)
+		}
+
+		// Substituir referências ao schema padrão "public" pelo schema do tenant
+		sqlString := string(sqlContent)
+
+		// Iniciar uma transação para aplicar a migração
+		tx, err := conn.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("erro ao iniciar transação: %w", err)
+		}
+
+		// Aplicar a migração, configurando o schema de busca
+		_, err = tx.Exec(ctx, fmt.Sprintf("SET search_path TO %s", schema))
+		if err != nil {
+			tx.Rollback(ctx)
+			return fmt.Errorf("erro ao configurar search_path: %w", err)
+		}
+
+		// Executar o script SQL da migração
+		_, err = tx.Exec(ctx, sqlString)
+		if err != nil {
+			tx.Rollback(ctx)
+			return fmt.Errorf("erro ao aplicar migração %s: %w", migration.filename, err)
+		}
+
+		// Registrar a migração como aplicada
+		_, err = tx.Exec(ctx, fmt.Sprintf(`
+			INSERT INTO %s.schema_migrations (version) VALUES ($1)
+		`, schema), path.Base(migration.filename))
+
+		if err != nil {
+			tx.Rollback(ctx)
+			return fmt.Errorf("erro ao registrar migração: %w", err)
+		}
+
+		// Commit da transação
+		err = tx.Commit(ctx)
+		if err != nil {
+			return fmt.Errorf("erro ao fazer commit da transação: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // GetByID busca um tenant pelo ID
