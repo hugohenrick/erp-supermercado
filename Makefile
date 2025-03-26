@@ -1,28 +1,34 @@
 # SuperERP - Sistema de Gestão para Supermercados
 # Makefile
 
-# Variáveis
-APP_NAME=supermarket-api
-APP_PATH=./cmd/api
-MIGRATION_PATH=./cmd/migration
-MIGRATIONS_DIR=./migrations
-GO_FILES=$(shell find . -name "*.go" -not -path "./vendor/*")
+# Cores para output
+GREEN  := $(shell tput -Txterm setaf 2)
+YELLOW := $(shell tput -Txterm setaf 3)
+RED    := $(shell tput -Txterm setaf 1)
+NC     := $(shell tput -Txterm sgr0)
+
+# Variáveis do projeto
+APP_NAME     := erp-supermercado
+APP_PATH     := ./cmd/api
+MIGRATION_PATH := ./cmd/migration
+MIGRATIONS_DIR := ./migrations
+GO_FILES     := $(shell find . -name "*.go" -not -path "./vendor/*")
+GOPATH       := $(shell go env GOPATH)
 DOCKER_COMPOSE=docker-compose
 
-# Cores para saída no terminal
-YELLOW=\033[0;33m
-GREEN=\033[0;32m
-RED=\033[0;31m
-BLUE=\033[0;34m
-NC=\033[0m # No Color
-
 # Alvos .PHONY
-.PHONY: build run dev clean test test-verbose coverage lint fmt swag help migrate migrate-up migrate-down migrate-create migrate-force migrate-version docker-up docker-down docker-logs
+.PHONY: build run dev clean test test-verbose coverage lint fmt swag help migrate migrate-up migrate-down migrate-create migrate-force migrate-version docker-up docker-down docker-logs deps
+
+# Dependências
+deps: ## Instala as dependências do projeto
+	@echo "${YELLOW}Instalando dependências...${NC}"
+	@go mod tidy
+	@echo "${GREEN}Dependências instaladas com sucesso${NC}"
 
 # Compilação e execução
 build: ## Compila a aplicação
 	@echo "${YELLOW}Compilando a aplicação...${NC}"
-	@go build -o bin/$(APP_NAME) $(APP_PATH)
+	@go build -o bin/$(APP_NAME) ./$(APP_PATH)
 	@echo "${GREEN}Aplicação compilada com sucesso em bin/$(APP_NAME)${NC}"
 
 run: build ## Compila e executa a aplicação
@@ -68,9 +74,9 @@ fmt: ## Formata o código-fonte
 
 # Documentação
 swag: ## Gera documentação Swagger
-	@command -v swag > /dev/null || go install github.com/swaggo/swag/cmd/swag@latest
+	@command -v $(GOPATH)/bin/swag > /dev/null || go install github.com/swaggo/swag/cmd/swag@latest
 	@echo "${YELLOW}Gerando documentação Swagger...${NC}"
-	@swag init -g $(APP_PATH)/main.go -o ./docs
+	@$(GOPATH)/bin/swag init -g $(APP_PATH)/main.go -o ./docs
 	@echo "${GREEN}Documentação Swagger gerada em ./docs${NC}"
 
 # Migrações

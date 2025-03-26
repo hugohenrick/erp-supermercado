@@ -1,8 +1,22 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "API para o sistema ERP de supermercados",
+        "title": "SuperERP API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
     },
+    "host": "localhost:8084",
+    "basePath": "/api/v1",
     "paths": {
         "/auth/login": {
             "post": {
@@ -490,6 +504,589 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/certificates": {
+            "get": {
+                "description": "Lista os certificados com paginação",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Certificados"
+                ],
+                "summary": "Listar certificados",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Número da página (padrão: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tamanho da página (padrão: 10)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filtrar por filial",
+                        "name": "branch_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CertificateListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Cria um novo certificado digital",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Certificados"
+                ],
+                "summary": "Criar certificado",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados do certificado",
+                        "name": "certificate",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CertificateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CertificateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/certificates/expiring": {
+            "get": {
+                "description": "Lista os certificados que expirarão em X dias",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Certificados"
+                ],
+                "summary": "Listar certificados expirando",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Número de dias (padrão: 30)",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CertificateListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/certificates/upload": {
+            "post": {
+                "description": "Realiza upload de um arquivo de certificado digital",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Certificados"
+                ],
+                "summary": "Upload de certificado",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Arquivo do certificado (.pfx)",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da filial",
+                        "name": "branch_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nome do certificado",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Senha do certificado",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Data de validade (YYYY-MM-DD)",
+                        "name": "expiration_date",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Se o certificado está ativo",
+                        "name": "is_active",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CertificateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/certificates/{id}": {
+            "get": {
+                "description": "Busca um certificado pelo ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Certificados"
+                ],
+                "summary": "Obter certificado",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID do certificado",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CertificateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Atualiza um certificado existente",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Certificados"
+                ],
+                "summary": "Atualizar certificado",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID do certificado",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados do certificado",
+                        "name": "certificate",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CertificateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CertificateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove um certificado pelo ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Certificados"
+                ],
+                "summary": "Excluir certificado",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID do certificado",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/certificates/{id}/activate": {
+            "post": {
+                "description": "Ativa um certificado pelo ID (e desativa outros certificados da mesma filial)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Certificados"
+                ],
+                "summary": "Ativar certificado",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID do certificado",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/certificates/{id}/deactivate": {
+            "post": {
+                "description": "Desativa um certificado pelo ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Certificados"
+                ],
+                "summary": "Desativar certificado",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID do certificado",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -1055,6 +1652,631 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/fiscal/configs": {
+            "get": {
+                "description": "Lista as configurações fiscais com paginação",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurações Fiscais"
+                ],
+                "summary": "Listar configurações fiscais",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Número da página (padrão: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tamanho da página (padrão: 10)",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filtrar por filial",
+                        "name": "branch_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.FiscalConfigListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Cria uma nova configuração fiscal",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurações Fiscais"
+                ],
+                "summary": "Criar configuração fiscal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados da configuração fiscal",
+                        "name": "config",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.FiscalConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.FiscalConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/fiscal/configs/branch/{branch_id}": {
+            "get": {
+                "description": "Busca a configuração fiscal para uma filial específica",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurações Fiscais"
+                ],
+                "summary": "Obter configuração fiscal por filial",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da filial",
+                        "name": "branch_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.FiscalConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/fiscal/configs/branch/{branch_id}/contingency": {
+            "post": {
+                "description": "Ativa ou desativa o modo de contingência para a filial",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurações Fiscais"
+                ],
+                "summary": "Atualizar modo de contingência",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da filial",
+                        "name": "branch_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados de contingência",
+                        "name": "contingency",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/fiscal/configs/branch/{branch_id}/increment-nfce": {
+            "post": {
+                "description": "Incrementa o próximo número de NFCe para a filial",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurações Fiscais"
+                ],
+                "summary": "Incrementar numeração de NFCe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da filial",
+                        "name": "branch_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/fiscal/configs/branch/{branch_id}/increment-nfe": {
+            "post": {
+                "description": "Incrementa o próximo número de NFe para a filial",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurações Fiscais"
+                ],
+                "summary": "Incrementar numeração de NFe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da filial",
+                        "name": "branch_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/fiscal/configs/{id}": {
+            "get": {
+                "description": "Busca uma configuração fiscal pelo ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurações Fiscais"
+                ],
+                "summary": "Obter configuração fiscal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da configuração fiscal",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.FiscalConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Atualiza uma configuração fiscal existente",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurações Fiscais"
+                ],
+                "summary": "Atualizar configuração fiscal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da configuração fiscal",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados da configuração fiscal",
+                        "name": "config",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.FiscalConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.FiscalConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove uma configuração fiscal pelo ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Configurações Fiscais"
+                ],
+                "summary": "Excluir configuração fiscal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da configuração fiscal",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/setup/admin": {
+            "post": {
+                "description": "Cria o primeiro usuário administrador para um tenant (não requer autenticação)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "setup"
+                ],
+                "summary": "Cria o primeiro usuário administrador",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do tenant",
+                        "name": "tenant-id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados do usuário administrador",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -1841,6 +3063,73 @@
         }
     },
     "definitions": {
+        "customer.CustomerType": {
+            "type": "string",
+            "enum": [
+                "final",
+                "reseller",
+                "wholesale"
+            ],
+            "x-enum-comments": {
+                "TypeFinal": "Consumidor Final",
+                "TypeReseller": "Revendedor",
+                "TypeWholesale": "Atacadista"
+            },
+            "x-enum-varnames": [
+                "TypeFinal",
+                "TypeReseller",
+                "TypeWholesale"
+            ]
+        },
+        "customer.PersonType": {
+            "type": "string",
+            "enum": [
+                "PF",
+                "PJ"
+            ],
+            "x-enum-comments": {
+                "PersonTypePF": "Pessoa Física",
+                "PersonTypePJ": "Pessoa Jurídica"
+            },
+            "x-enum-varnames": [
+                "PersonTypePF",
+                "PersonTypePJ"
+            ]
+        },
+        "customer.Status": {
+            "type": "string",
+            "enum": [
+                "active",
+                "inactive",
+                "blocked"
+            ],
+            "x-enum-varnames": [
+                "StatusActive",
+                "StatusInactive",
+                "StatusBlocked"
+            ]
+        },
+        "customer.TaxRegime": {
+            "type": "string",
+            "enum": [
+                "simples",
+                "mei",
+                "presumido",
+                "real"
+            ],
+            "x-enum-comments": {
+                "TaxRegimeMEI": "Microempreendedor Individual",
+                "TaxRegimePresumido": "Lucro Presumido",
+                "TaxRegimeReal": "Lucro Real",
+                "TaxRegimeSimples": "Simples Nacional"
+            },
+            "x-enum-varnames": [
+                "TaxRegimeSimples",
+                "TaxRegimeMEI",
+                "TaxRegimePresumido",
+                "TaxRegimeReal"
+            ]
+        },
         "dto.AddressRequest": {
             "type": "object",
             "properties": {
@@ -1993,6 +3282,96 @@
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CertificateListResponse": {
+            "type": "object",
+            "properties": {
+                "certificates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CertificateResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CertificateRequest": {
+            "type": "object",
+            "required": [
+                "branch_id",
+                "expiration_date",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "branch_id": {
+                    "type": "string"
+                },
+                "certificate_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "certificate_path": {
+                    "type": "string"
+                },
+                "expiration_date": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CertificateResponse": {
+            "type": "object",
+            "properties": {
+                "branch_id": {
+                    "type": "string"
+                },
+                "branch_name": {
+                    "type": "string"
+                },
+                "certificate_path": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "expiration_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_expired": {
+                    "type": "boolean"
+                },
+                "name": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -2201,7 +3580,7 @@
                     "type": "number"
                 },
                 "customer_type": {
-                    "type": "string"
+                    "$ref": "#/definitions/customer.CustomerType"
                 },
                 "document": {
                     "type": "string"
@@ -2225,7 +3604,7 @@
                     "type": "integer"
                 },
                 "person_type": {
-                    "type": "string"
+                    "$ref": "#/definitions/customer.PersonType"
                 },
                 "price_table_id": {
                     "type": "string"
@@ -2243,7 +3622,7 @@
                     "type": "string"
                 },
                 "tax_regime": {
-                    "type": "string"
+                    "$ref": "#/definitions/customer.TaxRegime"
                 },
                 "trade_name": {
                     "type": "string"
@@ -2281,7 +3660,7 @@
                     "type": "number"
                 },
                 "customer_type": {
-                    "type": "string"
+                    "$ref": "#/definitions/customer.CustomerType"
                 },
                 "document": {
                     "type": "string"
@@ -2311,7 +3690,7 @@
                     "type": "integer"
                 },
                 "person_type": {
-                    "type": "string"
+                    "$ref": "#/definitions/customer.PersonType"
                 },
                 "price_table_id": {
                     "type": "string"
@@ -2326,13 +3705,13 @@
                     "type": "string"
                 },
                 "status": {
-                    "type": "string"
+                    "$ref": "#/definitions/customer.Status"
                 },
                 "suframa": {
                     "type": "string"
                 },
                 "tax_regime": {
-                    "type": "string"
+                    "$ref": "#/definitions/customer.TaxRegime"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -2362,12 +3741,214 @@
                 }
             }
         },
+        "dto.FiscalConfigListResponse": {
+            "type": "object",
+            "properties": {
+                "configurations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.FiscalConfigResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.FiscalConfigRequest": {
+            "type": "object",
+            "required": [
+                "branch_id",
+                "nfce_environment",
+                "nfce_next_number",
+                "nfce_series",
+                "nfe_environment",
+                "nfe_next_number",
+                "nfe_series"
+            ],
+            "properties": {
+                "branch_id": {
+                    "type": "string"
+                },
+                "certificate_id": {
+                    "type": "string"
+                },
+                "contingency_enabled": {
+                    "type": "boolean"
+                },
+                "fiscal_csc": {
+                    "description": "Configurações Gerais",
+                    "type": "string"
+                },
+                "fiscal_csc_id": {
+                    "type": "string"
+                },
+                "nfce_csc_id": {
+                    "type": "string"
+                },
+                "nfce_csc_token": {
+                    "type": "string"
+                },
+                "nfce_environment": {
+                    "$ref": "#/definitions/fiscal.FiscalEnvironment"
+                },
+                "nfce_next_number": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "nfce_series": {
+                    "description": "Configurações NFCe",
+                    "type": "string"
+                },
+                "nfe_csc_id": {
+                    "type": "string"
+                },
+                "nfe_csc_token": {
+                    "type": "string"
+                },
+                "nfe_environment": {
+                    "$ref": "#/definitions/fiscal.FiscalEnvironment"
+                },
+                "nfe_next_number": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "nfe_series": {
+                    "description": "Configurações NFe",
+                    "type": "string"
+                },
+                "print_danfe_mode": {
+                    "description": "Configurações de impressão",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fiscal.PrintMode"
+                        }
+                    ]
+                },
+                "printer_name": {
+                    "type": "string"
+                },
+                "printer_paper_size": {
+                    "type": "string"
+                },
+                "smtp_host": {
+                    "description": "SMTP para envio de documentos fiscais",
+                    "type": "string"
+                },
+                "smtp_password": {
+                    "type": "string"
+                },
+                "smtp_port": {
+                    "type": "integer"
+                },
+                "smtp_username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.FiscalConfigResponse": {
+            "type": "object",
+            "properties": {
+                "branch_id": {
+                    "type": "string"
+                },
+                "branch_name": {
+                    "type": "string"
+                },
+                "certificate_id": {
+                    "type": "string"
+                },
+                "certificate_name": {
+                    "type": "string"
+                },
+                "contingency_enabled": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "fiscal_csc": {
+                    "description": "Configurações Gerais",
+                    "type": "string"
+                },
+                "fiscal_csc_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nfce_csc_id": {
+                    "type": "string"
+                },
+                "nfce_csc_token": {
+                    "type": "string"
+                },
+                "nfce_environment": {
+                    "$ref": "#/definitions/fiscal.FiscalEnvironment"
+                },
+                "nfce_next_number": {
+                    "type": "integer"
+                },
+                "nfce_series": {
+                    "description": "Configurações NFCe",
+                    "type": "string"
+                },
+                "nfe_csc_id": {
+                    "type": "string"
+                },
+                "nfe_csc_token": {
+                    "type": "string"
+                },
+                "nfe_environment": {
+                    "$ref": "#/definitions/fiscal.FiscalEnvironment"
+                },
+                "nfe_next_number": {
+                    "type": "integer"
+                },
+                "nfe_series": {
+                    "description": "Configurações NFe",
+                    "type": "string"
+                },
+                "print_danfe_mode": {
+                    "description": "Configurações de impressão",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fiscal.PrintMode"
+                        }
+                    ]
+                },
+                "printer_name": {
+                    "type": "string"
+                },
+                "printer_paper_size": {
+                    "type": "string"
+                },
+                "smtp_host": {
+                    "description": "SMTP para envio de documentos fiscais",
+                    "type": "string"
+                },
+                "smtp_port": {
+                    "type": "integer"
+                },
+                "smtp_username": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "required": [
                 "email",
-                "password",
-                "tenant_id"
+                "password"
             ],
             "properties": {
                 "email": {
@@ -2587,6 +4168,38 @@
                     "type": "string"
                 }
             }
+        },
+        "fiscal.FiscalEnvironment": {
+            "type": "string",
+            "enum": [
+                "production",
+                "homologation"
+            ],
+            "x-enum-varnames": [
+                "Production",
+                "Homologation"
+            ]
+        },
+        "fiscal.PrintMode": {
+            "type": "string",
+            "enum": [
+                "normal",
+                "contingency",
+                "none"
+            ],
+            "x-enum-varnames": [
+                "Normal",
+                "Contingency",
+                "None"
+            ]
+        }
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "description": "Cabeçalho de autenticação JWT usando o esquema Bearer. Exemplo: \"Bearer {token}\"",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }

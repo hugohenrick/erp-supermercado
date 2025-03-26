@@ -15,7 +15,9 @@ import (
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/api/route"
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/repository"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/branch"
+	"github.com/hugohenrick/erp-supermercado/internal/domain/certificate"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/customer"
+	"github.com/hugohenrick/erp-supermercado/internal/domain/fiscal"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/tenant"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/user"
 	"github.com/hugohenrick/erp-supermercado/internal/infrastructure/database"
@@ -32,15 +34,17 @@ import (
 
 // App representa a aplicação
 type App struct {
-	Router          *gin.Engine
-	DB              *pgxpool.Pool
-	TenantRepo      tenant.Repository
-	BranchRepo      branch.Repository
-	UserRepo        user.Repository
-	CustomerRepo    customer.Repository
-	TenantValidator pkgtenant.TenantValidator
-	Logger          logger.Logger
-	Server          *http.Server
+	Router           *gin.Engine
+	DB               *pgxpool.Pool
+	TenantRepo       tenant.Repository
+	BranchRepo       branch.Repository
+	UserRepo         user.Repository
+	CustomerRepo     customer.Repository
+	CertificateRepo  certificate.Repository
+	FiscalConfigRepo fiscal.Repository
+	TenantValidator  pkgtenant.TenantValidator
+	Logger           logger.Logger
+	Server           *http.Server
 }
 
 // NewApp cria uma nova instância da aplicação
@@ -59,6 +63,8 @@ func NewApp() *App {
 	branchRepo := repository.NewBranchRepository(pool)
 	userRepo := repository.NewUserRepository(pool)
 	customerRepo := repository.NewCustomerRepository(pool)
+	certificateRepo := repository.NewCertificateRepository(pool)
+	fiscalConfigRepo := repository.NewFiscalRepository(pool)
 
 	// Inicializar validador de tenant
 	tenantValidator := repository.NewTenantValidator(tenantRepo)
@@ -89,24 +95,26 @@ func NewApp() *App {
 	}
 
 	return &App{
-		Router:          router,
-		DB:              pool,
-		TenantRepo:      tenantRepo,
-		BranchRepo:      branchRepo,
-		UserRepo:        userRepo,
-		CustomerRepo:    customerRepo,
-		TenantValidator: tenantValidator,
-		Logger:          logger,
-		Server:          server,
+		Router:           router,
+		DB:               pool,
+		TenantRepo:       tenantRepo,
+		BranchRepo:       branchRepo,
+		UserRepo:         userRepo,
+		CustomerRepo:     customerRepo,
+		CertificateRepo:  certificateRepo,
+		FiscalConfigRepo: fiscalConfigRepo,
+		TenantValidator:  tenantValidator,
+		Logger:           logger,
+		Server:           server,
 	}
 }
 
 // SetupRoutes configura as rotas da API
 func (a *App) SetupRoutes() {
-	// Configuração do Swagger - posicionado antes do middleware para não exigir tenant
+	// Configurar Swagger
 	a.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Grupo de rotas para a API v1
+	// Grupo base de rotas com prefixo /api/v1
 	apiV1 := a.Router.Group("/api/v1")
 
 	// Middleware para validação de tenant aplicado apenas nas rotas da API
@@ -115,20 +123,24 @@ func (a *App) SetupRoutes() {
 	// Middleware para capturar o branch_id do cabeçalho
 	apiV1.Use(pkgbranch.BranchMiddleware())
 
-	// Controladores
+	// Criar instâncias dos controladores
 	tenantController := controller.NewTenantController(a.TenantRepo, a.DB)
 	branchController := controller.NewBranchController(a.BranchRepo)
 	authController := controller.NewAuthController(a.UserRepo)
 	userController := controller.NewUserController(a.UserRepo)
 	customerController := controller.NewCustomerController(a.CustomerRepo, a.Logger)
+	certificateController := controller.NewCertificateController(a.CertificateRepo, a.Logger)
+	fiscalController := controller.NewFiscalController(a.FiscalConfigRepo, a.Logger)
 
-	// Configurar rotas
+	// Configurar rotas para cada módulo
 	route.SetupTenantRoutes(apiV1, tenantController)
 	route.SetupBranchRoutes(apiV1, branchController)
 	route.SetupAuthRoutes(apiV1, authController)
 	route.SetupUserRoutes(apiV1, userController)
 	route.RegisterCustomerRoutes(apiV1, customerController)
 	route.SetupSetupRoutes(apiV1, userController)
+	route.SetupCertificateRoutes(apiV1, certificateController)
+	route.SetupFiscalRoutes(apiV1, fiscalController)
 }
 
 // Start inicia o servidor HTTP

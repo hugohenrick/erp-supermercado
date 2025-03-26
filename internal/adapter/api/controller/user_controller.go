@@ -148,11 +148,14 @@ func (c *UserController) List(ctx *gin.Context) {
 		return
 	}
 
-	pageStr := ctx.DefaultQuery("page", "1")
+	pageStr := ctx.DefaultQuery("page", "0")
 	pageSizeStr := ctx.DefaultQuery("page_size", "10")
 
 	page, _ := strconv.Atoi(pageStr)
 	pageSize, _ := strconv.Atoi(pageSizeStr)
+
+	// Ajustar a página para começar do 0 (frontend) para 1 (backend)
+	page = page + 1
 
 	pagination := dto.GetPagination(page, pageSize)
 
@@ -172,6 +175,9 @@ func (c *UserController) List(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, dto.NewErrorResponse(http.StatusInternalServerError, "Erro ao contar usuários", err.Error()))
 		return
 	}
+
+	// Ajustar a página de volta para começar do 0 para o frontend
+	pagination.Page = pagination.Page - 1
 
 	// Montar a resposta
 	response := dto.ToUserListResponse(users, totalCount, pagination.Page, pagination.PageSize)

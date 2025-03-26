@@ -399,17 +399,37 @@ func (r *UserRepository) List(ctx context.Context, tenantID string, limit, offse
 	}
 	defer conn.Release()
 
-	query := `
+	// Primeiro, definir o search_path para public para garantir que acessamos os tenants
+	_, err = conn.Exec(ctx, "SET search_path TO public")
+	if err != nil {
+		return nil, fmt.Errorf("falha ao configurar search_path: %w", err)
+	}
+
+	// Obter o schema do tenant a partir do tenant_id
+	var schema string
+	err = conn.QueryRow(ctx, "SELECT schema FROM public.tenants WHERE id = $1", tenantID).Scan(&schema)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("tenant não encontrado")
+		}
+		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
+	}
+
+	// Debug para verificar o schema recuperado
+	fmt.Printf("DEBUG List - Tenant ID: %s, Schema: %s\n", tenantID, schema)
+
+	// Construir a query usando o schema específico do tenant
+	query := fmt.Sprintf(`
 		SELECT 
 			id, tenant_id, branch_id, name, email, password, role, status, last_login_at, created_at, updated_at
 		FROM 
-			users
+			%s.users
 		WHERE 
 			tenant_id = $1
 		ORDER BY 
 			name ASC
 		LIMIT $2 OFFSET $3
-	`
+	`, schema)
 
 	rows, err := conn.Query(ctx, query, tenantID, limit, offset)
 	if err != nil {
@@ -725,11 +745,12 @@ func (r *UserRepository) scanUserRows(rows pgx.Rows) ([]*user.User, error) {
 		u := &user.User{}
 		var role, status string
 		var lastLoginTime pgtype.Timestamp
+		var branchID pgtype.Text // Usar pgtype.Text para lidar com NULL
 
 		err := rows.Scan(
 			&u.ID,
 			&u.TenantID,
-			&u.BranchID,
+			&branchID,
 			&u.Name,
 			&u.Email,
 			&u.Password,
@@ -742,6 +763,13 @@ func (r *UserRepository) scanUserRows(rows pgx.Rows) ([]*user.User, error) {
 
 		if err != nil {
 			return nil, fmt.Errorf("falha ao ler usuário: %w", err)
+		}
+
+		// Atribuir valores nulos aos campos da estrutura apenas se forem válidos
+		if branchID.Valid {
+			u.BranchID = branchID.String
+		} else {
+			u.BranchID = "" // String vazia se for NULL
 		}
 
 		u.Role = user.Role(role)
