@@ -1,5 +1,25 @@
 basePath: /api/v1
 definitions:
+  chat.Message:
+    properties:
+      content:
+        type: string
+      id:
+        type: string
+      role:
+        type: string
+      timestamp:
+        type: string
+      user_id:
+        type: string
+    type: object
+  controller.MCPMessageRequest:
+    properties:
+      message:
+        type: string
+    required:
+    - message
+    type: object
   customer.CustomerType:
     enum:
     - final
@@ -779,6 +799,53 @@ info:
   title: SuperERP API
   version: "1.0"
 paths:
+  /api/v1/mcp/history:
+    delete:
+      description: Delete the chat history for the current user
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Delete chat history
+      tags:
+      - MCP
+    get:
+      description: Get the chat history for the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/chat.Message'
+            type: array
+      summary: Get chat history
+      tags:
+      - MCP
+  /api/v1/mcp/message:
+    post:
+      consumes:
+      - application/json
+      description: Process a user message and return the response with chat history
+      parameters:
+      - description: Message to process
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/controller.MCPMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/chat.Message'
+      summary: Process a message through MCP
+      tags:
+      - MCP
   /auth/login:
     post:
       consumes:

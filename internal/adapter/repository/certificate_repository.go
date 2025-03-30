@@ -46,7 +46,7 @@ func (r *CertificateRepository) Create(ctx context.Context, cert *certificate.Ce
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -111,7 +111,7 @@ func (r *CertificateRepository) FindByID(ctx context.Context, id string) (*certi
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -163,7 +163,7 @@ func (r *CertificateRepository) FindByBranch(ctx context.Context, branchID strin
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -232,7 +232,7 @@ func (r *CertificateRepository) FindActiveCertificate(ctx context.Context, branc
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -292,7 +292,7 @@ func (r *CertificateRepository) List(ctx context.Context, tenantID string, limit
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -365,7 +365,7 @@ func (r *CertificateRepository) Update(ctx context.Context, cert *certificate.Ce
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -430,7 +430,7 @@ func (r *CertificateRepository) Delete(ctx context.Context, id string) error {
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -476,7 +476,7 @@ func (r *CertificateRepository) Activate(ctx context.Context, id string) error {
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -540,7 +540,7 @@ func (r *CertificateRepository) Deactivate(ctx context.Context, id string) error
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -588,7 +588,7 @@ func (r *CertificateRepository) CountByTenant(ctx context.Context, tenantID stri
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return 0, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -625,7 +625,7 @@ func (r *CertificateRepository) CountByBranch(ctx context.Context, branchID stri
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return 0, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -667,7 +667,7 @@ func (r *CertificateRepository) Exists(ctx context.Context, id string) (bool, er
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return false, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -704,7 +704,7 @@ func (r *CertificateRepository) FindExpiring(ctx context.Context, daysToExpire i
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}

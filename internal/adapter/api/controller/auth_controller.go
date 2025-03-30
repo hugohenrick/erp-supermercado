@@ -10,6 +10,7 @@ import (
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/repository"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/user"
 	"github.com/hugohenrick/erp-supermercado/pkg/auth"
+	"github.com/hugohenrick/erp-supermercado/pkg/tenant"
 )
 
 // AuthController gerencia as requisições relacionadas à autenticação
@@ -157,7 +158,11 @@ func (c *AuthController) RefreshToken(ctx *gin.Context) {
 	}
 
 	// Buscar o usuário para ter informações atualizadas
-	u, err := c.userRepository.FindByID(ctx, claims.UserID)
+	// Criar um novo contexto com o tenant ID
+	reqCtx := ctx.Request.Context()
+	reqCtx = tenant.SetTenantIDContext(reqCtx, claims.TenantID)
+
+	u, err := c.userRepository.FindByID(reqCtx, claims.UserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			ctx.JSON(http.StatusUnauthorized, dto.NewErrorResponse(http.StatusUnauthorized, "Usuário não encontrado", "O usuário associado ao token não existe mais"))
@@ -205,8 +210,26 @@ func (c *AuthController) Me(ctx *gin.Context) {
 		return
 	}
 
-	// Buscar o usuário no repositório
-	u, err := c.userRepository.FindByID(ctx, userIDStr)
+	// Obter o tenant ID do contexto
+	tenantID, exists := ctx.Get("tenant_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, dto.NewErrorResponse(http.StatusUnauthorized, "Tenant ID não encontrado", ""))
+		return
+	}
+
+	// Converter tenantID para string
+	tenantIDStr, ok := tenantID.(string)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, dto.NewErrorResponse(http.StatusInternalServerError, "Erro interno", "Falha ao obter tenant ID"))
+		return
+	}
+
+	// Criar um novo contexto com o tenant ID
+	reqCtx := ctx.Request.Context()
+	reqCtx = tenant.SetTenantIDContext(reqCtx, tenantIDStr)
+
+	// Buscar o usuário no repositório usando o novo contexto
+	u, err := c.userRepository.FindByID(reqCtx, userIDStr)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			ctx.JSON(http.StatusUnauthorized, dto.NewErrorResponse(http.StatusUnauthorized, "Usuário não encontrado", ""))

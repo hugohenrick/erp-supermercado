@@ -46,7 +46,7 @@ func (r *FiscalRepository) Create(ctx context.Context, config *fiscal.Configurat
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -135,7 +135,7 @@ func (r *FiscalRepository) FindByID(ctx context.Context, id string) (*fiscal.Con
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -196,7 +196,7 @@ func (r *FiscalRepository) FindByBranch(ctx context.Context, branchID string) (*
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -264,7 +264,7 @@ func (r *FiscalRepository) List(ctx context.Context, tenantID string, limit, off
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -346,7 +346,7 @@ func (r *FiscalRepository) Update(ctx context.Context, config *fiscal.Configurat
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -424,7 +424,7 @@ func (r *FiscalRepository) Delete(ctx context.Context, id string) error {
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -460,7 +460,7 @@ func (r *FiscalRepository) UpdateNFeNextNumber(ctx context.Context, id string, n
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -503,7 +503,7 @@ func (r *FiscalRepository) UpdateNFCeNextNumber(ctx context.Context, id string, 
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -546,7 +546,7 @@ func (r *FiscalRepository) GetAndIncrementNFeNumber(ctx context.Context, branchI
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return 0, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -611,7 +611,7 @@ func (r *FiscalRepository) GetAndIncrementNFCeNumber(ctx context.Context, branch
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return 0, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -676,7 +676,7 @@ func (r *FiscalRepository) Exists(ctx context.Context, id string) (bool, error) 
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return false, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}
@@ -713,7 +713,7 @@ func (r *FiscalRepository) ExistsByBranch(ctx context.Context, branchID string) 
 
 	// Obter o schema do tenant
 	var schema string
-	err = conn.QueryRow(ctx, "SELECT schema_name FROM tenants WHERE id = $1", tenantID).Scan(&schema)
+	err = conn.QueryRow(ctx, "SELECT schema FROM tenants WHERE id = $1", tenantID).Scan(&schema)
 	if err != nil {
 		return false, fmt.Errorf("falha ao obter schema do tenant: %w", err)
 	}

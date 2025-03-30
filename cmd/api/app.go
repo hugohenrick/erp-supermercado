@@ -16,6 +16,7 @@ import (
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/repository"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/branch"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/certificate"
+	"github.com/hugohenrick/erp-supermercado/internal/domain/chat"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/customer"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/fiscal"
 	"github.com/hugohenrick/erp-supermercado/internal/domain/tenant"
@@ -23,6 +24,7 @@ import (
 	"github.com/hugohenrick/erp-supermercado/internal/infrastructure/database"
 	pkgbranch "github.com/hugohenrick/erp-supermercado/pkg/branch"
 	"github.com/hugohenrick/erp-supermercado/pkg/logger"
+	"github.com/hugohenrick/erp-supermercado/pkg/mcp"
 	pkgtenant "github.com/hugohenrick/erp-supermercado/pkg/tenant"
 	"github.com/jackc/pgx/v5/pgxpool"
 	swaggerFiles "github.com/swaggo/files"
@@ -42,13 +44,16 @@ type App struct {
 	CustomerRepo     customer.Repository
 	CertificateRepo  certificate.Repository
 	FiscalConfigRepo fiscal.Repository
+	ChatRepo         chat.Repository
 	TenantValidator  pkgtenant.TenantValidator
 	Logger           logger.Logger
+	MCPClient        *mcp.MCPClient
 	Server           *http.Server
 }
 
 // NewApp cria uma nova instância da aplicação
 func NewApp() *App {
+	// Load environment variables
 	// Inicializar o banco de dados
 	pool, err := database.NewPostgresDB()
 	if err != nil {
@@ -57,7 +62,7 @@ func NewApp() *App {
 
 	// Inicializar logger
 	logger := logger.NewLogger()
-
+	// Initialize services
 	// Inicializar repositórios
 	tenantRepo := repository.NewTenantRepository(pool)
 	branchRepo := repository.NewBranchRepository(pool)
@@ -65,13 +70,21 @@ func NewApp() *App {
 	customerRepo := repository.NewCustomerRepository(pool)
 	certificateRepo := repository.NewCertificateRepository(pool)
 	fiscalConfigRepo := repository.NewFiscalRepository(pool)
-
+	chatRepo := repository.NewChatRepository(pool)
+	// Initialize controllers
 	// Inicializar validador de tenant
 	tenantValidator := repository.NewTenantValidator(tenantRepo)
+	// Initialize router
+	// Inicializar MCP client
+	mcpClient, err := mcp.NewMCPClient(logger, chatRepo)
+	if err != nil {
+		log.Fatalf("Erro ao inicializar MCP client: %v", err)
+	}
 
 	// Inicializar o router Gin
 	router := gin.Default()
 
+	// Add CORS middleware
 	// Configuração do CORS
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
@@ -81,6 +94,10 @@ func NewApp() *App {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	// Initialize routes
+	// Adicionar middleware MCP após o CORS
+	router.Use(mcp.MCPMiddleware())
 
 	// Obter a porta da API das variáveis de ambiente
 	apiPort := os.Getenv("API_PORT")
@@ -93,7 +110,6 @@ func NewApp() *App {
 		Addr:    ":" + apiPort,
 		Handler: router,
 	}
-
 	return &App{
 		Router:           router,
 		DB:               pool,
@@ -103,8 +119,10 @@ func NewApp() *App {
 		CustomerRepo:     customerRepo,
 		CertificateRepo:  certificateRepo,
 		FiscalConfigRepo: fiscalConfigRepo,
+		ChatRepo:         chatRepo,
 		TenantValidator:  tenantValidator,
 		Logger:           logger,
+		MCPClient:        mcpClient,
 		Server:           server,
 	}
 }
@@ -141,6 +159,8 @@ func (a *App) SetupRoutes() {
 	route.SetupSetupRoutes(apiV1, userController)
 	route.SetupCertificateRoutes(apiV1, certificateController)
 	route.SetupFiscalRoutes(apiV1, fiscalController)
+	route.ConfigureMCPRoutes(apiV1, a.MCPClient)
+
 }
 
 // Start inicia o servidor HTTP

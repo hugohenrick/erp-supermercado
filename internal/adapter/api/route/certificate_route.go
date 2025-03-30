@@ -24,5 +24,8 @@ func SetupCertificateRoutes(router *gin.RouterGroup, certificateController *cont
 		certificateRouter.POST("/:id/activate", certificateController.Activate)
 		certificateRouter.POST("/:id/deactivate", certificateController.Deactivate)
 		certificateRouter.GET("/expiring", certificateController.ListExpiring)
+
+		// Nova rota para extrair informações do certificado
+		certificateRouter.POST("/extract-info", certificateController.ExtractInfo)
 	}
 }

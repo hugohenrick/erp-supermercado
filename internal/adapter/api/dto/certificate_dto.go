@@ -48,6 +48,17 @@ type CertificateListResponse struct {
 	PageSize     int                   `json:"page_size"`
 }
 
+// CertificateExtractRequest representa os dados para extração de informações do certificado
+type CertificateExtractRequest struct {
+	Password string `form:"password" binding:"required"`
+}
+
+// CertificateExtractResponse representa as informações extraídas do certificado
+type CertificateExtractResponse struct {
+	ExpirationDate time.Time `json:"expiration_date"`
+	Subject        string    `json:"subject"`
+}
+
 // NewCertificateResponse cria um novo CertificateResponse a partir de um certificado
 func NewCertificateResponse(cert *certificate.Certificate) *CertificateResponse {
 	return &CertificateResponse{

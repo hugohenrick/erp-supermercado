@@ -17,7 +17,7 @@ GOPATH       := $(shell go env GOPATH)
 DOCKER_COMPOSE=docker-compose
 
 # Alvos .PHONY
-.PHONY: build run dev clean test test-verbose coverage lint fmt swag help migrate migrate-up migrate-down migrate-create migrate-force migrate-version docker-up docker-down docker-logs deps
+.PHONY: build run dev clean test test-verbose coverage lint fmt swag help migrate migrate-up migrate-down migrate-create migrate-force migrate-version docker-up docker-down docker-logs deps migrate-tenant-up migrate-tenant-down migrate-tenant-force migrate-all-tenants
 
 # Dependências
 deps: ## Instala as dependências do projeto
@@ -148,3 +148,36 @@ help: ## Mostra esta ajuda
 
 # Default
 .DEFAULT_GOAL := help 
+
+# Tenant Migration Commands
+migrate-tenant-up: ## Executa migrações para cima em um schema específico usando golang-migrate
+	@command -v migrate > /dev/null || (echo "${RED}golang-migrate não está instalado. Instale-o primeiro.${NC}" && exit 1)
+	@echo "${YELLOW}Executando migrações para cima no schema $(schema)...${NC}"
+	@PGPASSWORD=$$(grep DB_PASSWORD .env | cut -d '=' -f2) psql -h $$(grep DB_HOST .env | cut -d '=' -f2) -p $$(grep DB_PORT .env | cut -d '=' -f2) -U $$(grep DB_USER .env | cut -d '=' -f2) -d $$(grep DB_NAME .env | cut -d '=' -f2) -c "CREATE SCHEMA IF NOT EXISTS $(schema);"
+	@PGPASSWORD=$$(grep DB_PASSWORD .env | cut -d '=' -f2) psql -h $$(grep DB_HOST .env | cut -d '=' -f2) -p $$(grep DB_PORT .env | cut -d '=' -f2) -U $$(grep DB_USER .env | cut -d '=' -f2) -d $$(grep DB_NAME .env | cut -d '=' -f2) -c "CREATE TABLE IF NOT EXISTS $(schema).schema_migrations (version bigint not null primary key, dirty boolean not null);"
+	@migrate -path migrations/tenant -database "postgres://$$(grep DB_USER .env | cut -d '=' -f2):$$(grep DB_PASSWORD .env | cut -d '=' -f2)@$$(grep DB_HOST .env | cut -d '=' -f2):$$(grep DB_PORT .env | cut -d '=' -f2)/$$(grep DB_NAME .env | cut -d '=' -f2)?sslmode=disable&search_path=$(schema)" up
+	@echo "${GREEN}Migrações executadas com sucesso${NC}"
+
+migrate-tenant-down:
+	@if [ -z "$(schema)" ]; then \
+		echo "Error: schema parameter is required. Usage: make migrate-tenant-down schema=<tenant_schema>"; \
+		exit 1; \
+	fi
+	migrate -database "$(DATABASE_URL)?search_path=$(schema)" -path migrations/tenant down
+
+migrate-tenant-force:
+	@if [ -z "$(schema)" ]; then \
+		echo "Error: schema and version parameters are required. Usage: make migrate-tenant-force schema=<tenant_schema> version=<version>"; \
+		exit 1; \
+	fi
+	@if [ -z "$(version)" ]; then \
+		echo "Error: version parameter is required. Usage: make migrate-tenant-force schema=<tenant_schema> version=<version>"; \
+		exit 1; \
+	fi
+	migrate -database "$(DATABASE_URL)?search_path=$(schema)" -path migrations/tenant force $(version)
+
+migrate-all-tenants:
+	@psql "$(DATABASE_URL)" -t -A -c "SELECT schema FROM tenants WHERE status = 'active'" | while read schema; do \
+		echo "Migrating tenant schema: $$schema"; \
+		migrate -database "$(DATABASE_URL)?search_path=$$schema" -path migrations/tenant up; \
+	done 
