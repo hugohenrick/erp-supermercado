@@ -4,12 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hugohenrick/erp-supermercado/internal/adapter/api/controller"
 	"github.com/hugohenrick/erp-supermercado/pkg/auth"
+	"github.com/hugohenrick/erp-supermercado/pkg/logger"
 	"github.com/hugohenrick/erp-supermercado/pkg/mcp"
+	"github.com/hugohenrick/erp-supermercado/pkg/repository"
 )
 
 // ConfigureMCPRoutes configura as rotas do MCP
-func ConfigureMCPRoutes(router *gin.RouterGroup, mcpClient *mcp.MCPClient) {
-	mcpController := controller.NewMCPController(mcpClient)
+func ConfigureMCPRoutes(router *gin.RouterGroup, mcpClient *mcp.MCPClient, customerRepo repository.CustomerRepository, logger logger.Logger) {
+	mcpController := controller.NewMCPController(mcpClient, customerRepo, logger)
 
 	// Grupo de rotas MCP com autenticação JWT e middleware MCP
 	mcpGroup := router.Group("/mcp")

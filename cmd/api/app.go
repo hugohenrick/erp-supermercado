@@ -25,6 +25,7 @@ import (
 	pkgbranch "github.com/hugohenrick/erp-supermercado/pkg/branch"
 	"github.com/hugohenrick/erp-supermercado/pkg/logger"
 	"github.com/hugohenrick/erp-supermercado/pkg/mcp"
+	"github.com/hugohenrick/erp-supermercado/pkg/mcp/intent/adapter"
 	pkgtenant "github.com/hugohenrick/erp-supermercado/pkg/tenant"
 	"github.com/jackc/pgx/v5/pgxpool"
 	swaggerFiles "github.com/swaggo/files"
@@ -159,8 +160,10 @@ func (a *App) SetupRoutes() {
 	route.SetupSetupRoutes(apiV1, userController)
 	route.SetupCertificateRoutes(apiV1, certificateController)
 	route.SetupFiscalRoutes(apiV1, fiscalController)
-	route.ConfigureMCPRoutes(apiV1, a.MCPClient)
 
+	// Create a customer repository adapter for the MCP
+	customerRepoAdapter := adapter.NewCustomerRepositoryAdapter(a.CustomerRepo, a.Logger)
+	route.ConfigureMCPRoutes(apiV1, a.MCPClient, customerRepoAdapter, a.Logger)
 }
 
 // Start inicia o servidor HTTP
